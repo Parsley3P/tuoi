@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tươi's English Exam Prep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f9f8f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 2.5rem 1.5rem 2rem;
+      border: 1px solid #e4e2da;
+      border-radius: 16px;
+      background: #fff;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-emoji {
+      font-size: 52px;
+      display: block;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero h1 {
+      font-family: 'Lora', serif;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      margin-bottom: 0.75rem;
+      color: #111;
+    }
+
+    .hero-tagline {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: #666;
+      max-width: 440px;
+      margin: 0 auto 0.4rem;
+      line-height: 1.7;
+    }
+
+    .hero-attr {
+      font-size: 13px;
+      color: #999;
+    }
+
+    /* Goal Banner */
+    .goal-banner {
+      background: #eaf3de;
+      color: #3b6d11;
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #c0dd97;
+    }
+
+    .goal-icon { font-size: 24px; flex-shrink: 0; }
+
+    .goal-banner strong {
+      font-size: 15px;
+      font-weight: 600;
+      color: #27500a;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .goal-banner span {
+      font-size: 14px;
+      color: #3b6d11;
+    }
+
+    /* Sections */
+    .section { margin-bottom: 1.75rem; }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #999;
+      margin-bottom: 0.85rem;
+    }
+
+    /* Motto */
+    .motto-block {
+      border-left: 3px solid #9fe1cb;
+      padding: 0.85rem 1.25rem;
+      background: #fff;
+      border-radius: 0 10px 10px 0;
+      border-top: 1px solid #e4e2da;
+      border-right: 1px solid #e4e2da;
+      border-bottom: 1px solid #e4e2da;
+    }
+
+    .motto-text {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: #222;
+      line-height: 1.7;
+    }
+
+    .motto-desc {
+      font-size: 13px;
+      color: #777;
+      margin-top: 6px;
+    }
+
+    /* Checklist */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e4e2da;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      user-select: none;
+    }
+
+    .checklist li:hover { background: #f5f4f0; }
+
+    .checklist li.done {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      border: 1.5px solid #ccc;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.15s;
+      color: white;
+    }
+
+    .done .checkbox {
+      background: #1d9e75;
+      border-color: #1d9e75;
+    }
+
+    .task-icon { font-size: 16px; }
+
+    .progress-bar-wrap {
+      height: 6px;
+      background: #ede9e0;
+      border-radius: 999px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #1d9e75;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    /* Quotes */
+    .quotes-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quote-card {
+      padding: 1rem 1.25rem;
+      border: 1px solid #e4e2da;
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .q-text {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #222;
+      line-height: 1.7;
+      margin-bottom: 7px;
+    }
+
+    .q-meta {
+      font-size: 12px;
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .q-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #9fe1cb;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* About */
+    .about-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 1.25rem;
+      border: 1px solid #e4e2da;
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #e1f5ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 20px;
+      color: #0f6e56;
+      flex-shrink: 0;
+      border: 2px solid #9fe1cb;
+    }
+
+    .about-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #111;
+    }
+
+    .about-sub {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e4e2da;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="hero">
+      <span class="hero-emoji">🌸</span>
+      <h1>Tươi's English Exam Prep</h1>
+      <p class="hero-tagline">"The secret of getting ahead is getting started."</p>
+      <p class="hero-attr">— Mark Twain 🚀</p>
+    </div>
+
+    <div class="goal-banner">
+      <span class="goal-icon">🎯</span>
+      <div>
+        <strong>Goal</strong>
+        <span>Pass the English exam — no excuses, only results!</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">🔥 Study motto</p>
+      <div class="motto-block">
+        <p class="motto-text">"Every expert was once a beginner. Every pro was once an amateur."</p>
+        <p class="motto-desc">Don't be afraid of mistakes — they are proof that you are trying! 🌱</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">📅 Study plan</p>
+      <ul class="checklist" id="checklist">
+        <li data-i="0"><span class="checkbox"></span><span class="task-icon">📖</span> Review all grammar topics</li>
+        <li data-i="1"><span class="checkbox"></span><span class="task-icon">📝</span> Complete 1 practice test per week</li>
+        <li data-i="2"><span class="checkbox"></span><span class="task-icon">📚</span> Learn 10 new vocabulary words per day</li>
+        <li data-i="3"><span class="checkbox"></span><span class="task-icon">🔍</span> Review mistake log before each exam</li>
+        <li data-i="4"><span class="checkbox"></span><span class="task-icon">⏰</span> Stay consistent — even 30 mins a day counts!</li>
+      </ul>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="prog"></div>
+      </div>
+      <p class="progress-label" id="prog-label">0 / 5 completed</p>
+    </div>
+
+    <div class="section">
+      <p class="section-title">💡 Motivational corner</p>
+      <div class="quotes-grid">
+        <div class="quote-card">
+          <p class="q-text">"It always seems impossible until it's done."</p>
+          <span class="q-meta"><span class="q-dot"></span> Nelson Mandela ✨</span>
+        </div>
+        <div class="quote-card">
+          <p class="q-text">"You don't have to be great to start, but you have to start to be great."</p>
+          <span class="q-meta"><span class="q-dot"></span> Unknown 🌟</span>
+        </div>
+        <div class="quote-card">
+          <p class="q-text">"Hard work beats talent when talent doesn't work hard."</p>
+          <span class="q-meta"><span class="q-dot"></span> Tim Notke 💥</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">🌻 About</p>
+      <div class="about-card">
+        <div class="avatar">T</div>
+        <div>
+          <p class="about-name">Tươi</p>
+          <p class="about-sub">A determined learner on a mission.<br>One exam at a time. One day at a time. <strong>Let's go! 🏆</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="footer">Last updated: April 2026</p>
+
+  </div>
+
+  <script>
+    const items = document.querySelectorAll('#checklist li');
+    const prog = document.getElementById('prog');
+    const label = document.getElementById('prog-label');
+    const state = [false, false, false, false, false];
+
+    function update() {
+      const done = state.filter(Boolean).length;
+      prog.style.width = Math.round((done / state.length) * 100) + '%';
+      label.textContent = done + ' / ' + state.length + ' completed';
+    }
+
+    items.forEach(li => {
+      li.addEventListener('click', () => {
+        const i = +li.dataset.i;
+        state[i] = !state[i];
+        li.classList.toggle('done', state[i]);
+        li.querySelector('.checkbox').textContent = state[i] ? '✓' : '';
+        update();
+      });
+    });
+  </script>
+</body>
+</html>
