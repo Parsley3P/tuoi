@@ -1,1 +1,665 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESL Reading Practice</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+            --text: #1f2937;
+            --bg: #f3f4f6;
+            --frame-bg: #ffffff;
+        }
 
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .frame {
+            background-color: var(--frame-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .passage-text {
+            white-space: pre-wrap;
+            margin-bottom: 30px;
+        }
+
+        /* Cloze Inputs */
+        input.cloze-input {
+            width: 100px;
+            padding: 4px 8px;
+            margin: 0 4px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        input.cloze-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .cloze-feedback {
+            display: none;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        /* MCQ Blocks */
+        .mcq-block {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .mcq-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .mcq-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        @media (max-width: 600px) {
+            .mcq-options { grid-template-columns: 1fr; }
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background: #f3f4f6;
+        }
+        .option-label input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        /* Status Classes */
+        .is-correct-input {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+            color: #166534;
+        }
+        .is-wrong-input {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+            color: #991b1b;
+            text-decoration: line-through;
+        }
+        .is-correct-box {
+            background-color: var(--correct-bg) !important;
+            border-color: var(--correct-border) !important;
+        }
+        .is-wrong-box {
+            background-color: var(--wrong-bg) !important;
+            border-color: var(--wrong-border) !important;
+        }
+        
+        .explanation {
+            display: none;
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #374151;
+            padding: 10px;
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            border-radius: 4px;
+        }
+
+        /* Buttons */
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Cho phép rớt dòng trên điện thoại nếu chật */
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; box-shadow: none; }
+        
+        #btn-next { display: none; background-color: #059669; }
+        #btn-next:hover { background-color: #047857; }
+        
+        #btn-retry { display: none; background-color: #f59e0b; }
+        #btn-retry:hover { background-color: #d97706; }
+
+        .progress {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="progress" id="progress-text">Loading...</div>
+        <div class="frame" id="passage-container">
+            <h2 id="p-title">Passage Title</h2>
+            <div id="p-content" class="passage-text"></div>
+            <div id="p-questions"></div>
+        </div>
+        <div class="controls">
+            <button id="btn-check">Kiểm tra (Check)</button>
+            <button id="btn-retry">Làm lại (Retry) ↻</button>
+            <button id="btn-next">Bài tiếp (Next) ⏎</button>
+        </div>
+    </div>
+
+    <script>
+        // Dữ liệu toàn bộ 22 bài đọc
+        const rawData = [
+            {
+                title: "A prisoner's view", type: "cloze",
+                text: "Although I hate (9) {9} in prison, I know it's my own fault. If I hadn't committed several burglaries, I wouldn't (10) {10} been sent here to prison. I really (11) {11} I hadn't done the things I did. But you can't change the past, (12) {12} you? So I'm here.\nMy cell is tiny - it's not much bigger (13) {13} a cupboard! It's (14) {14} small that I can touch the door and the window at the same time! I share it with one other prisoner, called Dave. Both (15) {15} us get on well, which is good.\nMy family live a long way from here, so none of them can visit me very often, but they write (16) {16} me every week. I always look forward to their letters.\nThere's a chance I'll be allowed out later this year. If I get out, I (17) {17} never commit another crime. That's for sure! It'll be (18) {18} a great feeling to be free again!",
+                answers: {
+                    9: { a: "being", e: "hate + V-ing: ghét tình trạng ở tù (being)." },
+                    10: { a: "have", e: "Cấu trúc câu điều kiện loại 3: wouldn't have + V3." },
+                    11: { a: "wish", e: "S + wish + S + quá khứ hoàn thành (hadn't done): điều ước ngược quá khứ." },
+                    12: { a: "can", e: "Câu hỏi đuôi của 'can't' là 'can'." },
+                    13: { a: "than", e: "So sánh hơn: bigger than." },
+                    14: { a: "so", e: "Cấu trúc: so + adj + that (quá... đến nỗi mà)." },
+                    15: { a: "of", e: "Both of us: Cả hai chúng tôi." },
+                    16: { a: "to", e: "Write to somebody: Viết thư cho ai." },
+                    17: { a: "will", alt: "'ll", e: "Câu điều kiện loại 1: Nếu tôi ra ngoài, tôi sẽ..." },
+                    18: { a: "such", e: "Cấu trúc: such + a/an + adj + N." }
+                }
+            },
+            {
+                title: "Lucky accidents", type: "cloze",
+                text: "Sometimes, scientists know what they (9) {9} looking for and they find it. At other times, things (10) {10} discovered by accident. Two famous examples of this are gravity and penicillin.\nIsaac Newton, (11) {11} first used maths to describe gravity, was sitting (12) {12} his garden when he saw (13) {13} apple fall - some say it fell on his head! This made him think about why, and he realised he (14) {14} explain it using maths.\nAlexander Fleming discovered penicillin, (15) {15} was the first antibiotic. It completely changed medicine. He was working (16) {16} his laboratory when he saw that something (17) {17} started growing on one of his experiments. He analysed it and realised that it (18) {18} be very useful in fighting disease. Sometimes luck can be a big help!",
+                answers: {
+                    9: { a: "are", e: "Thì hiện tại tiếp diễn: are looking for." },
+                    10: { a: "are", e: "Bị động thì hiện tại đơn: are discovered (được phát hiện)." },
+                    11: { a: "who", e: "Đại từ quan hệ thay cho người (Isaac Newton)." },
+                    12: { a: "in", e: "in his garden: trong vườn." },
+                    13: { a: "an", e: "an apple: một quả táo (trước nguyên âm)." },
+                    14: { a: "could", e: "Thì quá khứ của can, diễn tả khả năng trong quá khứ." },
+                    15: { a: "which", e: "Đại từ quan hệ thay cho vật (penicillin)." },
+                    16: { a: "in", e: "in his laboratory: trong phòng thí nghiệm." },
+                    17: { a: "had", e: "Quá khứ hoàn thành: had started growing (đã bắt đầu mọc lên trước một hành động khác trong QK)." },
+                    18: { a: "could", alt: "would", e: "Dự đoán khả năng: có thể sẽ rất hữu ích." }
+                }
+            },
+            {
+                title: "Technology and the young", type: "mcq",
+                text: "Modern technology is changing and improving all the time. Every month, scientists (33) {33} new gadgets and (34) {34} to help us with our daily lives, and (35) {35} ways to make existing technology faster and better. Our homes are full of hardware (such as DVD players and computers) and (36) {36} (such as computer games and MP3s).\n(37) {37} suggests, however, that it's young people who are best able to deal with this change. Whereas teenagers have no problem (38) {38} a DVD player, their mums and dads and grandparents often find using new technology (39) {39} and difficult. But if you're a teenager who criticises your parents for their (40) {40} of technological awareness, don't be too hard on them! Some time (41) {41} the future, when you've got children of your own, your ability to deal with new technology will probably (42) {42} and your children will feel more comfortable with new technology than you do. You won't want them to criticise you, will you?",
+                mcqs: {
+                    33: { opts: ["A. estimate", "B. invent", "C. involve", "D. experiment"], ans: 1, e: "invent (phát minh) ra các thiết bị mới." },
+                    34: { opts: ["A. experiments", "B. effects", "C. laboratories", "D. equipment"], ans: 3, e: "equipment (thiết bị), đi cùng với gadgets." },
+                    35: { opts: ["A. involve", "B. discover", "C. decrease", "D. connect"], ans: 1, e: "discover (khám phá) ra những cách mới." },
+                    36: { opts: ["A. screens", "B. gadgets", "C. software", "D. laptops"], ans: 2, e: "software (phần mềm) bao gồm game, MP3." },
+                    37: { opts: ["A. Research", "B. Experiment", "C. Program", "D. Technology"], ans: 0, e: "Research suggests (Nghiên cứu chỉ ra rằng)." },
+                    38: { opts: ["A. involving", "B. operating", "C. discovering", "D. inventing"], ans: 1, e: "operating (vận hành) máy móc/DVD player." },
+                    39: { opts: ["A. automatic", "B. unique", "C. sudden", "D. complicated"], ans: 3, e: "complicated (phức tạp) đi song song với difficult." },
+                    40: { opts: ["A. research", "B. experiment", "C. effect", "D. lack"], ans: 3, e: "lack of (sự thiếu hụt/thiếu nhận thức công nghệ)." },
+                    41: { opts: ["A. to", "B. in", "C. on", "D. at"], ans: 1, e: "in the future (trong tương lai)." },
+                    42: { opts: ["A. decrease", "B. involve", "C. lack", "D. estimate"], ans: 0, e: "decrease (giảm sút), năng lực thích nghi công nghệ sẽ giảm khi già đi." }
+                }
+            },
+            {
+                title: "Careers advice", type: "cloze",
+                text: "Do you know what job or career you want to do when you leave school? Maybe you know exactly what you want to do. If so, you're (33) {33} [LUCK]! For most teenagers, thinking about future jobs can lead to (34) {34} [CONFUSE]. That's what careers (35) {35} [ADVICE] are for. They're people who ask you questions about your (36) {36} [PREFER] and help you with your choices. They can make (37) {37} [SUGGEST] about jobs which might suit you, and can also make (38) {38} [RECOMMEND] about where to find more information. They're not there to tell you what to do, they're just there to be (39) {39} [HELP]. Choosing the right career can be a problem, but you don't need to search for the (40) {40} [SOLVE] on your own!",
+                answers: {
+                    33: { a: "lucky", e: "Tính từ sau động từ to be (you're lucky: bạn thật may mắn)." },
+                    34: { a: "confusion", e: "Danh từ đứng sau giới từ 'to' (lead to confusion: dẫn đến sự bối rối)." },
+                    35: { a: "advisers", alt: "advisors", e: "Danh từ chỉ người số nhiều (careers advisers: chuyên gia tư vấn nghề nghiệp)." },
+                    36: { a: "preferences", e: "Danh từ số nhiều (sở thích/sự ưu tiên)." },
+                    37: { a: "suggestions", e: "Cụm 'make suggestions': đưa ra những gợi ý." },
+                    38: { a: "recommendations", e: "Cụm 'make recommendations': đưa ra những lời khuyên/đề xuất." },
+                    39: { a: "helpful", e: "Tính từ sau 'be' (be helpful: giúp ích/có ích)." },
+                    40: { a: "solution", e: "Danh từ đứng sau mạo từ 'the' (the solution: giải pháp)." }
+                }
+            },
+            {
+                title: "Ferry to School", type: "mcq",
+                text: "Most pupils go to school each day on foot or by car, but Jordan Basford is different. He lives on the Scottish island of Egilsay. There, the school had to (19) {19} because there weren't any other pupils. The nearest school is in Rousay, across the sea. His family have a boat, but it is small, and they can (20) {20} use it in good weather. A much larger boat is (21) {21} in bad weather. So every day, Jordan has to (22) {22} the ferry across the sea to go to school. He usually comes back home afterwards, but sometimes he phones home to say that he's (23) {23} the night at a friend's house instead. 'I know I have to travel a long (24) {24} to school each day,' he says. 'But I don't mind.'",
+                mcqs: {
+                    19: { opts: ["A. close", "B. complete", "C. finish"], ans: 0, e: "close (đóng cửa) vì không có học sinh." },
+                    20: { opts: ["A. almost", "B. only", "C. nearly"], ans: 1, e: "only (chỉ có thể) dùng trong thời tiết tốt." },
+                    21: { opts: ["A. needed", "B. liked", "C. had"], ans: 0, e: "needed (được cần đến) khi thời tiết xấu." },
+                    22: { opts: ["A. travel", "B. make", "C. catch"], ans: 2, e: "catch the ferry (bắt phà)." },
+                    23: { opts: ["A. resting", "B. staying", "C. sleeping"], ans: 1, e: "stay the night (ở lại qua đêm)." },
+                    24: { opts: ["A. way", "B. transport", "C. mile"], ans: 0, e: "a long way (một chặng đường dài)." }
+                }
+            },
+            {
+                title: "The Museum of Childhood", type: "mcq",
+                text: "The Museum of Childhood in Edinburgh is full of variety. Visitors can (19) {19} much more. There is everything from toy soldiers to board (20) {20}. The museum was started by a man called Patrick Murray, who (21) {21} many toys during his life and wanted to show them to the public. But it's more than (22) {22} a museum of toys. It explores all parts of growing (23) {23} and its exhibitions include lots of different things, from storybooks to baby (24) {24}, dolls houses, toy cars and much more. The museum is easy to find in the centre of Edinburgh and is open all year.",
+                mcqs: {
+                    19: { opts: ["A. watch", "B. look", "C. see"], ans: 2, e: "see much more (có thể chiêm ngưỡng nhiều hơn thế)." },
+                    20: { opts: ["A. games", "B. competitions", "C. matches"], ans: 0, e: "board games (trò chơi cờ bàn)." },
+                    21: { opts: ["A. picked", "B. collected", "C. took"], ans: 1, e: "collected (sưu tập) đồ chơi." },
+                    22: { opts: ["A. already", "B. just", "C. yet"], ans: 1, e: "more than just a museum (không chỉ đơn thuần là một bảo tàng)." },
+                    23: { opts: ["A. up", "B. out", "C. away"], ans: 0, e: "growing up (sự trưởng thành)." },
+                    24: { opts: ["A. snack", "B. food", "C. meal"], ans: 1, e: "baby food (thức ăn trẻ em)." }
+                }
+            },
+            {
+                title: "Preparing to go camping with the school", type: "mcq",
+                text: "From choosing the right equipment to remembering to take spare socks, campers need to be prepared! Keen camper, Jody Walterson, 16, explains why.\nMost pupils are really excited when they are taken on a school camping (19) {19}. They're becoming really popular these days. For example, my class goes camping at (20) {20} once a year. It's usually just for one night, but it's sometimes (21) {21}. Parents and children need to work together to (22) {22} sure that everything goes well. Part of this is deciding what to take - this is a really important (23) {23}. It's a good idea to take more clothes than you think you will (24) {24}. So, if you're going for two nights, take three pairs of socks. And don't forget your toothbrush or a charger for your phone!",
+                mcqs: {
+                    19: { opts: ["A. way", "B. journey", "C. trip"], ans: 2, e: "camping trip (chuyến cắm trại)." },
+                    20: { opts: ["A. little", "B. least", "C. low"], ans: 1, e: "at least (ít nhất) một lần một năm." },
+                    21: { opts: ["A. longer", "B. bigger", "C. higher"], ans: 0, e: "longer (lâu hơn) 1 đêm." },
+                    22: { opts: ["A. get", "B. do", "C. make"], ans: 2, e: "make sure (đảm bảo)." },
+                    23: { opts: ["A. job", "B. work", "C. occupation"], ans: 0, e: "an important job (một công việc/nhiệm vụ quan trọng đếm được)." },
+                    24: { opts: ["A. have", "B. like", "C. need"], ans: 2, e: "will need (bạn sẽ cần tới)." }
+                }
+            },
+            {
+                title: "Cello player wins music competition", type: "mcq",
+                text: "A 17-year-old musician has won the Young Musician of the Year Prize. Alex Guo was competing (19) {19} her brother and four other musicians under the (20) {20} of 21 to win the prize. The winner was (21) {21} after the young musicians each played on stage with a band. When she (22) {22} that she was the winner, she was so excited. 'I just couldn't (23) {23} it,' she said. 'Music has always been a (24) {24}, but now I want it to be my job, too.'",
+                mcqs: {
+                    19: { opts: ["A. over", "B. against", "C. after"], ans: 1, e: "compete against (thi đấu/cạnh tranh với)." },
+                    20: { opts: ["A. age", "B. years", "C. time"], ans: 0, e: "under the age of 21 (dưới độ tuổi 21)." },
+                    21: { opts: ["A. taken", "B. found", "C. chosen"], ans: 2, e: "was chosen (người chiến thắng được lựa chọn)." },
+                    22: { opts: ["A. heard", "B. listened", "C. agreed"], ans: 0, e: "heard (nghe tin) cô ấy là người chiến thắng." },
+                    23: { opts: ["A. guess", "B. believe", "C. thank"], ans: 1, e: "couldn't believe it (không thể tin được)." },
+                    24: { opts: ["A. hobby", "B. fun", "C. game"], ans: 0, e: "a hobby (một sở thích cá nhân)." }
+                }
+            },
+            {
+                title: "Park sculptures", type: "mcq",
+                text: "Many cities have parks for people to enjoy. And it's very (21) {21} to find wonderful sculptures in them. However, some sculptures found in Fairbanks, Alaska, aren't quite the same as in other cities. When the temperature (22) {22} at the end of winter, they all disappear – because they're made of ice!\nFairbanks has been the home of the World Ice Art Championships for over 20 years, and artists from many different countries come to create spectacular ice sculptures. The ice is brought from a lake (23) {23} near the sculpture park. It's said to be so clear that visitors can read a newspaper through it – even though the individual pieces are over one metre (24) {24}.\nVisitors also have the (25) {25} to make their own ice sculptures if they wish, at special classes. There's a children's play park, too, where (26) {26} everything is made of ice, including sculptures of favourite animals. It's a great place to visit!",
+                mcqs: {
+                    21: { opts: ["A. usual", "B. general", "C. common", "D. familiar"], ans: 2, e: "common (phổ biến) để nhìn thấy." },
+                    22: { opts: ["A. develops", "B. rises", "C. grows", "D. builds"], ans: 1, e: "temperature rises (nhiệt độ tăng lên)." },
+                    23: { opts: ["A. located", "B. arranged", "C. contained", "D. attached"], ans: 0, e: "located near (được định vị/nằm gần)." },
+                    24: { opts: ["A. heavy", "B. large", "C. strong", "D. thick"], ans: 3, e: "one metre thick (dày một mét)." },
+                    25: { opts: ["A. occasion", "B. benefit", "C. opportunity", "D. ability"], ans: 2, e: "opportunity (có cơ hội để làm gì đó)." },
+                    26: { opts: ["A. totally", "B. absolutely", "C. completely", "D. fully"], ans: 1, e: "absolutely everything (hoàn toàn mọi thứ, nhấn mạnh mạnh mẽ)." }
+                }
+            },
+            {
+                title: "Sheep can recognise faces!", type: "mcq",
+                text: "Many people think sheep aren't very intelligent creatures. But in fact, (21) {21} to new research, they may be cleverer than we think. For example, sheep can actually be trained to recognise human faces from photographs!\nRecognising faces is an important human social (22) {22}. However, it seems that sheep are also social animals that can recognise other sheep as well as (23) {23} humans. In experiments, researchers trained eight sheep to recognise the faces of celebrities from photographs. Training involved getting the sheep to (24) {24} decisions about the photos they saw. At one end of a room, they would see two different photographs, and would receive a (25) {25} of food for approaching the photograph of the celebrity; if they approached the wrong photograph, they got nothing. Over time, they learned to (26) {26} getting food with the celebrity's photograph. And after training, the sheep correctly chose the celebrity's face eight times out of ten!",
+                mcqs: {
+                    21: { opts: ["A. regarding", "B. following", "C. resulting", "D. according"], ans: 3, e: "according to (theo như)." },
+                    22: { opts: ["A. skill", "B. talent", "C. knowledge", "D. method"], ans: 0, e: "social skill (kỹ năng xã hội)." },
+                    23: { opts: ["A. ordinary", "B. usual", "C. familiar", "D. frequent"], ans: 2, e: "familiar humans (những người quen thuộc)." },
+                    24: { opts: ["A. set", "B. make", "C. have", "D. do"], ans: 1, e: "make decisions (đưa ra quyết định)." },
+                    25: { opts: ["A. reward", "B. benefit", "C. tip", "D. goal"], ans: 0, e: "a reward of food (một phần thưởng thức ăn)." },
+                    26: { opts: ["A. attach", "B. join", "C. add", "D. connect"], ans: 3, e: "connect...with (kết nối việc có thức ăn với bức ảnh)." }
+                }
+            },
+            {
+                title: "Music can change the taste of vegetables!", type: "mcq",
+                text: "Many children, and some adults too, dislike the taste of certain vegetables. The flavours of foods such as cabbage and broccoli are generally the ones people mention as their least (21) {21} vegetables, as these vegetables are believed to have an extremely (22) {22} taste.\nHowever, according to an Oxford psychologist, children might change their (23) {23} about these foods if they can hear simple music while they're eating – such as the sounds that come from one musical instrument, called a wind chime. This instrument often (24) {24} in people's gardens, and plays sweet notes when the wind blows through it. These notes may make the food seem to taste sweeter than it would do normally. However, many adults (25) {25} that their tastes developed as they grew up, so they now enjoy a far greater range of food. As a result, they're much more (26) {26} to eat the kind of vegetables they always hated during their childhood.",
+                mcqs: {
+                    21: { opts: ["A. pleasant", "B. delicious", "C. special", "D. favourite"], ans: 3, e: "least favourite (ít được yêu thích nhất)." },
+                    22: { opts: ["A. bitter", "B. hard", "C. heavy", "D. raw"], ans: 0, e: "bitter taste (vị đắng)." },
+                    23: { opts: ["A. senses", "B. minds", "C. moods", "D. reasons"], ans: 1, e: "change their minds (thay đổi suy nghĩ/quan điểm)." },
+                    24: { opts: ["A. drops", "B. connects", "C. attaches", "D. hangs"], ans: 3, e: "hangs (được treo) trong vườn." },
+                    25: { opts: ["A. complain", "B. advise", "C. admit", "D. warn"], ans: 2, e: "admit (thừa nhận rằng) khẩu vị của họ đã phát triển." },
+                    26: { opts: ["A. likely", "B. possible", "C. reasonable", "D. sure"], ans: 0, e: "more likely to eat (có khả năng sẽ ăn nhiều hơn)." }
+                }
+            },
+            {
+                title: "Clever birds", type: "mcq",
+                text: "The wild birds known as ravens are thought to be very clever. In fact, they can solve some quite (21) {21} problems, especially when they're trying to get food. For example, one bird was filmed taking a box of nuts from a bird table and (22) {22} it onto the ground, so that it would break and the bird could eat the nuts inside!\nScientists also (23) {23} that the birds could actually use stones as tools to (24) {24} out simple tasks. So in an experiment, they taught five birds to use a tool to open a box with food inside. The birds soon became very (25) {25} at doing this. So for the next experiment, the birds were given a small (26) {26} of tools to choose from. They always picked the tool that scientists had given them for the first task. And hours later, they could still remember which tool they'd used!",
+                mcqs: {
+                    21: { opts: ["A. expert", "B. complicated", "C. heavy", "D. confused"], ans: 1, e: "complicated problems (vấn đề phức tạp)." },
+                    22: { opts: ["A. letting", "B. falling", "C. dropping", "D. leaving"], ans: 2, e: "dropping it (thả nó rơi xuống)." },
+                    23: { opts: ["A. noticed", "B. advised", "C. watched", "D. studied"], ans: 0, e: "noticed that (nhận ra rằng)." },
+                    24: { opts: ["A. take", "B. carry", "C. make", "D. check"], ans: 1, e: "carry out tasks (tiến hành/thực hiện nhiệm vụ)." },
+                    25: { opts: ["A. experienced", "B. intelligent", "C. correct", "D. keen"], ans: 0, e: "became expert/experienced at (trở nên thành thạo)." }, 
+                    26: { opts: ["A. group", "B. total", "C. amount", "D. number"], ans: 3, e: "a small number of (một số lượng nhỏ các công cụ đếm được)." }
+                }
+            },
+            {
+                title: "Colouring books", type: "mcq",
+                text: "Many people probably used to spend time adding colour to pictures in colouring books when they were children. However, once people get older, very few of them continue with the hobby. Instead, they (21) {21} their crayons away in the cupboard forever.\nHowever, psychology researchers now think that even for adults, (22) {22} as little as ten minutes a day colouring pictures in this way can bring huge (23) {23}. For example, some people say that it improves their (24) {24} for a while by making them feel more cheerful and generally calmer.\nOne reason for this may be that other activities (25) {25} with art, such as drawing or painting, can actually be quite stressful, especially if you don't feel very successful at it. But adding colour to a picture that's already drawn for you (26) {26} only a low level of skill, so you can relax rather than becoming anxious about it!",
+                mcqs: {
+                    21: { opts: ["A. leave", "B. set", "C. give", "D. put"], ans: 3, e: "put away (cất đi)." },
+                    22: { opts: ["A. taking", "B. completing", "C. spending", "D. filling"], ans: 2, e: "spending time (dành ra bao nhiêu thời gian)." },
+                    23: { opts: ["A. benefits", "B. interests", "C. favours", "D. uses"], ans: 0, e: "bring huge benefits (mang lại những lợi ích to lớn)." },
+                    24: { opts: ["A. character", "B. mood", "C. condition", "D. mind"], ans: 1, e: "improves their mood (cải thiện tâm trạng)." },
+                    25: { opts: ["A. connected", "B. joined", "C. compared", "D. attached"], ans: 0, e: "connected with art (kết nối/liên quan đến nghệ thuật)." },
+                    26: { opts: ["A. depends", "B. calls", "C. lacks", "D. requires"], ans: 3, e: "requires only a low level of skill (chỉ đòi hỏi kỹ năng thấp)." }
+                }
+            },
+            {
+                title: "A brief history of apples", type: "mcq",
+                text: "Do you always have a piece of fruit for your lunch? If you do, it's probably an apple! This is true particularly in places like western Europe, where apples have grown for hundreds of years. So it would be easy to (21) {21} that's where they came from originally.\nIn fact, though, the fruit we know today has been on an extraordinary (22) {22} over the centuries. Research suggests modern apples originally came all the way from Kazakhstan in Asia, and (23) {23} up in Europe partly because of people carrying goods along the famous Silk Road, from western Europe all the way to China in the east. This helped to spread apples in both (24) {24}.\nPeople (25) {25} down their apples after they'd finished eating them, and the seeds entered the ground and produced new types of apple trees. Farmers were then able to start developing a much (26) {26} range of apples.",
+                mcqs: {
+                    21: { opts: ["A. consider", "B. wonder", "C. imagine", "D. expect"], ans: 2, e: "easy to imagine (dễ dàng hình dung/tưởng tượng)." },
+                    22: { opts: ["A. distance", "B. travel", "C. course", "D. journey"], ans: 3, e: "on an extraordinary journey (trên một hành trình phi thường)." },
+                    23: { opts: ["A. reached", "B. ended", "C. set", "D. kept"], ans: 1, e: "ended up (kết thúc ở, rốt cuộc thì đến đâu)." },
+                    24: { opts: ["A. routes", "B. ways", "C. directions", "D. paths"], ans: 2, e: "in both directions (cả hai hướng)." },
+                    25: { opts: ["A. threw", "B. dropped", "C. fell", "D. let"], ans: 0, e: "threw down (vứt xuống)." },
+                    26: { opts: ["A. longer", "B. deeper", "C. higher", "D. broader"], ans: 3, e: "a broader range (phạm vi đa dạng và rộng hơn)." }
+                }
+            },
+            {
+                title: "The invention of crisps", type: "mcq",
+                text: "Potato crisps were invented by accident in 1853, by a chef called George Crum. He was extremely (21) {21} of his cookery skills, and the expensive hotel where he worked attracted customers who were (22) {22} to eating only the best food.\nOne evening, a particularly difficult-to-please guest complained about Crum's fried potatoes. 'They're too thick,' he said, 'too soft, and have no flavour.' He (23) {23} that they should be replaced.\nThe customer's negative (24) {24} made Crum extremely angry, so he decided to annoy the customer. He cut a potato into paper-thin slices, fried the pieces until they were hard, then put far too much salt on them. 'He'll hate them,' Crum thought. But the customer loved them and ordered more.\nNews of this new snack travelled fast and an absolutely (25) {25} global industry has grown from Crum's invention – even though his fried potatoes were actually (26) {26} to taste disgusting!",
+                mcqs: {
+                    21: { opts: ["A. proud", "B. satisfied", "C. pleased", "D. impressed"], ans: 0, e: "proud of (tự hào về)." },
+                    22: { opts: ["A. prepared", "B. familiar", "C. used", "D. known"], ans: 2, e: "were used to (quen với việc)." },
+                    23: { opts: ["A. convinced", "B. wanted", "C. needed", "D. demanded"], ans: 3, e: "demanded (đòi hỏi/yêu cầu quyết liệt)." },
+                    24: { opts: ["A. comments", "B. notes", "C. reasons", "D. explanations"], ans: 0, e: "negative comments (những lời bình luận tiêu cực)." },
+                    25: { opts: ["A. big", "B. huge", "C. large", "D. wide"], ans: 1, e: "absolutely huge (nhấn mạnh sự khổng lồ của ngành công nghiệp)." },
+                    26: { opts: ["A. hoped", "B. intended", "C. attempted", "D. tried"], ans: 1, e: "were intended to (có chủ ý/dự định làm cho kinh tởm)." }
+                }
+            },
+            {
+                title: "Whale songs", type: "mcq",
+                text: "Did you know that a kind of whale, called a humpback whale, sings? In the 1960s it was (21) {21} that humpbacks communicate with each other by making beautiful noises. A record was (22) {22} in 1970 called Songs of the humpback whale, which sold millions of copies. People were absolutely amazed to learn that some whales in the deep oceans were so intelligent: in (23) {23} centuries people had thought that whales had simple brains, like fish.\nThe songs of the whales were so popular that they were (24) {24} in recordings of sounds from our planet which were (25) {25} into space in 1977. The recordings were chosen to show the wide (26) {26} of life on our planet. People hoped that, in the future, they might be found by intelligent creatures far out in space.",
+                mcqs: {
+                    21: { opts: ["A. explored", "B. invented", "C. discovered", "D. informed"], ans: 2, e: "discovered (được khám phá ra rằng)." },
+                    22: { opts: ["A. appeared", "B. delivered", "C. achieved", "D. produced"], ans: 3, e: "produced (được sản xuất/xuất bản)." },
+                    23: { opts: ["A. previous", "B. old", "C. early", "D. ancient"], ans: 0, e: "previous centuries (các thế kỷ trước)." },
+                    24: { opts: ["A. contained", "B. included", "C. consisted", "D. involved"], ans: 1, e: "included in (được bao gồm trong)." },
+                    25: { opts: ["A. sent", "B. added", "C. kept", "D. placed"], ans: 0, e: "sent into space (được gửi vào không gian)." },
+                    26: { opts: ["A. sort", "B. difference", "C. kind", "D. variety"], ans: 3, e: "wide variety (sự đa dạng phong phú)." }
+                }
+            },
+            {
+                title: "Honey", type: "mcq",
+                text: "People all over the world enjoy eating honey. But how much do you know about this (21) {21} food? Most honey is made by bees, but what few people realise is that there are several types of bee which make honey.\nBees may have to visit about two million flowers to produce only half a kilo of honey. The type of flower the bees visit (22) {22} both how the honey tastes and its colour. In fact, there are (23) {23} more than three hundred kinds of honey.\nIn (24) {24} times, honey was added to food instead of sugar, as sugar was very rare. In many cultures, people have used it for centuries to (25) {25} various health problems. (26) {26} people all over the world still add it to hot water and drink it when they have a sore throat.",
+                mcqs: {
+                    21: { opts: ["A. usual", "B. shared", "C. general", "D. common"], ans: 3, e: "common food (loại thực phẩm phổ biến)." },
+                    22: { opts: ["A. makes", "B. affects", "C. guides", "D. directs"], ans: 1, e: "affects (ảnh hưởng đến mùi vị)." },
+                    23: { opts: ["A. correctly", "B. actually", "C. accurately", "D. absolutely"], ans: 1, e: "actually (thực sự là có hơn 300 loại)." },
+                    24: { opts: ["A. antique", "B. far", "C. elderly", "D. ancient"], ans: 3, e: "in ancient times (trong thời cổ đại)." },
+                    25: { opts: ["A. cure", "B. mend", "C. repair", "D. assist"], ans: 0, e: "cure health problems (chữa trị các vấn đề sức khoẻ)." },
+                    26: { opts: ["A. Recently", "B. Lately", "C. Nowadays", "D. Already"], ans: 2, e: "Nowadays (Ngày nay)." }
+                }
+            },
+            {
+                title: "Inventing the telephone", type: "mcq",
+                text: "The telephone was invented by Alexander Graham Bell. His first career involved teaching people how to use a system which his father had (21) {21} to help deaf people communicate. Because of this, Bell became more and more interested in all types of communication.\nBell wanted to (22) {22} it possible for people to talk to each other over (23) {23} distances. He realised that he had to turn sound into electricity and then back to sound again. This was a big engineering (24) {24}. In 1876, after several months of hard work on this problem, Bell and his assistant Thomas Watson (25) {25} it.\nThe first words ever spoken on the telephone are famous. Bell was working on their new invention in his laboratory when he accidentally (26) {26} dangerous liquid on his clothes. He called Watson and said, 'Come here, I want to see you!'",
+                mcqs: {
+                    21: { opts: ["A. thought", "B. developed", "C. done", "D. reached"], ans: 1, e: "developed (phát triển một hệ thống)." },
+                    22: { opts: ["A. create", "B. have", "C. get", "D. make"], ans: 3, e: "make it possible (làm cho điều gì đó trở nên khả thi)." },
+                    23: { opts: ["A. long", "B. high", "C. wide", "D. far"], ans: 0, e: "long distances (khoảng cách xa)." },
+                    24: { opts: ["A. request", "B. demand", "C. challenge", "D. method"], ans: 2, e: "engineering challenge (thử thách kỹ thuật)." },
+                    25: { opts: ["A. solved", "B. answered", "C. succeeded", "D. found"], ans: 0, e: "solved it (đã giải quyết được nó)." },
+                    26: { opts: ["A. lost", "B. kept", "C. fell", "D. spilt"], ans: 3, e: "spilt liquid (làm đổ chất lỏng)." }
+                }
+            },
+            {
+                title: "Redwoods", type: "mcq",
+                text: "The tallest trees in the world are called redwoods and they grow in California. These trees can (1) {1} reach heights of around 91 metres. Among the enormous redwoods, one giant tree beats them all. This tree was discovered and measured in 2006. The National Park Service then (2) {2} that at 115.7 metres, it was the tallest tree in the world. Now it is so famous that it even has a name, \"Hyperion\". In California there are other giant redwoods which are just a little shorter than Hyperion. The exact (3) {3} of many of these enormous trees is kept secret to prevent them from being (4) {4}. A (5) {5} redwood tree lives for 500 to 700 years, although some have been found that are more than 2,000 years old. The National Park Service says that the redwoods' great height is (6) {6} due to the climate in California; there is heavy rain every year and the temperatures are mild.",
+                mcqs: {
+                    1: { opts: ["A. clearly", "B. easily", "C. obviously", "D. luckily"], ans: 1, e: "easily reach (dễ dàng đạt đến)." },
+                    2: { opts: ["A. answered", "B. announced", "C. told", "D. spoke"], ans: 1, e: "announced (thông báo rằng)." },
+                    3: { opts: ["A. location", "B. route", "C. destination", "D. point"], ans: 0, e: "exact location (vị trí chính xác)." },
+                    4: { opts: ["A. wasted", "B. damaged", "C. worn", "D. injured"], ans: 1, e: "from being damaged (khỏi việc bị phá hoại)." },
+                    5: { opts: ["A. familiar", "B. usual", "C. general", "D. typical"], ans: 3, e: "typical tree (một cái cây tiêu biểu/điển hình)." },
+                    6: { opts: ["A. mainly", "B. extremely", "C. properly", "D. finally"], ans: 0, e: "mainly due to (chủ yếu là do)." }
+                }
+            },
+            {
+                title: "Titan Arum", type: "mcq",
+                text: "We usually expect flowers to have an attractive smell. However, this isn't true of all of them. The flowering plant called the Titan Arum only produces flowers every ten years or so but when it does, the smell is so (1) {1} that most people say they can't stand being near the flower, unless they hold their noses. They say that it's the worst smell they have ever (2) {2}.\nThe plant, which can grow to over 100 cm tall, is able to produce heat. As this happens, the bad smell is created. But the smell does have a purpose. It's intended to encourage all kinds of insects to travel (3) {3} distances to visit the flowers.\nThe flowers always (4) {4} a lot of interest because they are produced so (5) {5}. Scientists wanting to study the plant need to (6) {6} out their research before the flowers disappear again for another ten years.",
+                mcqs: {
+                    1: { opts: ["A. messy", "B. disgusting", "C. frightening", "D. painful"], ans: 1, e: "disgusting (kinh tởm)." },
+                    2: { opts: ["A. experienced", "B. met", "C. realized", "D. felt"], ans: 0, e: "ever experienced (từng trải qua/ngửi thấy)." },
+                    3: { opts: ["A. far", "B. broad", "C. wide", "D. long"], ans: 3, e: "long distances (khoảng cách dài/xa)." },
+                    4: { opts: ["A. aim", "B. offer", "C. demand", "D. attract"], ans: 3, e: "attract a lot of interest (thu hút sự chú ý)." },
+                    5: { opts: ["A. rarely", "B. slightly", "C. hardly", "D. lately"], ans: 0, e: "rarely (hiếm khi được nở)." },
+                    6: { opts: ["A. take", "B. find", "C. carry", "D. start"], ans: 2, e: "carry out (tiến hành nghiên cứu)." }
+                }
+            },
+            {
+                title: "Food production", type: "mcq",
+                text: "The world is always looking for new methods of food production. Scientists in Australia are now (1) {1} in a project to grow food in a different way. The scientists have produced plants that have grown not just faster, but also bigger. They (2) {2} their techniques on methods that were previously tried in experiments to grow crops in space. Crops like peas were grown in special glass houses where temperatures were carefully controlled. Special lights were shone on the young plants for 22 hours a day. This had the (3) {3} of increasing the speed at which the plants developed.\nThe scientists say that the results were even better than they had hoped. When they (4) {4} the plants with ones grown in (5) {5} conditions, they found that the new plants were also much healthier. Many people (6) {6} that the technique will be used with a wide variety of plants in the future.",
+                mcqs: {
+                    1: { opts: ["A. concerned", "B. decided", "C. involved", "D. accepted"], ans: 2, e: "involved in (tham gia vào một dự án)." },
+                    2: { opts: ["A. found", "B. based", "C. agreed", "D. set"], ans: 1, e: "based on (dựa trên các phương pháp)." },
+                    3: { opts: ["A. effect", "B. conclusion", "C. solution", "D. product"], ans: 0, e: "had the effect of (có tác dụng làm tăng)." },
+                    4: { opts: ["A. recognized", "B. looked", "C. considered", "D. compared"], ans: 3, e: "compared with (so sánh với)." },
+                    5: { opts: ["A. likely", "B. general", "C. normal", "D. common"], ans: 2, e: "normal conditions (điều kiện bình thường)." },
+                    6: { opts: ["A. tell", "B. predict", "C. follow", "D. communicate"], ans: 1, e: "predict (dự đoán rằng)." }
+                }
+            },
+            {
+                title: "Plastic waste", type: "mcq",
+                text: "These days, plastic waste in the world's oceans has become a serious issue. Scientists want people to know about the problems that are created by the plastic that gets into the oceans, often after people have used it and (7) {7} it away. Many of these bits of plastic are extremely small; some are just the (8) {8} of a tiny piece of salt. These little pieces of plastic often (9) {9} up in the sea. There, perhaps because they look very similar to fish eggs, they are often eaten by other animals. They are also sometimes (10) {10} by sea creatures who are trying to feed their own young.\nScientists say that this is very bad for many different (11) {11} of animals; cod, penguins and dolphins have all been (12) {12} by the problem.",
+                mcqs: {
+                    7: { opts: ["A. taken", "B. given", "C. put", "D. thrown"], ans: 3, e: "thrown away (vứt đi)." },
+                    8: { opts: ["A. size", "B. amount", "C. total", "D. quantity"], ans: 0, e: "the size of (kích thước bằng)." },
+                    9: { opts: ["A. keep", "B. grow", "C. end", "D. catch"], ans: 2, e: "end up in (kết thúc ở, rốt cuộc thì trôi nổi ở)." },
+                    10: { opts: ["A. looked", "B. collected", "C. hunted", "D. searched"], ans: 1, e: "collected by (bị thu thập/nhặt bởi)." },
+                    11: { opts: ["A. species", "B. members", "C. ranges", "D. names"], ans: 0, e: "species of animals (các loài động vật)." },
+                    12: { opts: ["A. approached", "B. arranged", "C. attended", "D. affected"], ans: 3, e: "affected by (bị ảnh hưởng bởi)." }
+                }
+            }
+        ];
+
+        // Shuffle passages for random order
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        shuffleArray(rawData);
+
+        let currentIndex = 0;
+        let isChecked = false;
+        
+        const btnCheck = document.getElementById('btn-check');
+        const btnNext = document.getElementById('btn-next');
+        const btnRetry = document.getElementById('btn-retry');
+        const progressText = document.getElementById('progress-text');
+        
+        function renderPassage(index) {
+            isChecked = false;
+            
+            // Cài đặt hiển thị các nút
+            btnCheck.style.display = 'inline-block';
+            btnNext.style.display = 'none';
+            btnRetry.style.display = 'none';
+            
+            progressText.innerText = `Bài đọc ${index + 1} / ${rawData.length}`;
+            
+            const passage = rawData[index];
+            document.getElementById('p-title').innerText = passage.title;
+            
+            const contentBox = document.getElementById('p-content');
+            const questionsBox = document.getElementById('p-questions');
+            contentBox.innerHTML = '';
+            questionsBox.innerHTML = '';
+
+            let formattedText = passage.text;
+
+            if (passage.type === 'cloze') {
+                for (let key in passage.answers) {
+                    const inputHTML = `<input type="text" class="cloze-input" data-id="${key}" autocomplete="off"><span id="exp-${key}" class="cloze-feedback"></span>`;
+                    formattedText = formattedText.replace(`{${key}}`, inputHTML);
+                }
+                contentBox.innerHTML = formattedText;
+            } 
+            else if (passage.type === 'mcq') {
+                for (let key in passage.mcqs) {
+                    formattedText = formattedText.replace(`{${key}}`, `<strong>________</strong>`);
+                }
+                contentBox.innerHTML = formattedText;
+                
+                for (let key in passage.mcqs) {
+                    const qData = passage.mcqs[key];
+                    let optsHTML = '';
+                    qData.opts.forEach((optText, i) => {
+                        optsHTML += `
+                            <label class="option-label" id="label-${key}-${i}">
+                                <input type="radio" name="q_${key}" value="${i}"> ${optText}
+                            </label>
+                        `;
+                    });
+                    
+                    const block = document.createElement('div');
+                    block.className = 'mcq-block';
+                    block.innerHTML = `
+                        <div class="mcq-title">Câu ${key}:</div>
+                        <div class="mcq-options">${optsHTML}</div>
+                        <div id="exp-${key}" class="explanation"><strong>Giải thích:</strong> ${qData.e}</div>
+                    `;
+                    questionsBox.appendChild(block);
+                }
+            }
+        }
+
+        function cleanString(str) {
+            return str.trim().toLowerCase();
+        }
+
+        function checkAnswers() {
+            if (isChecked) return;
+            const passage = rawData[currentIndex];
+
+            if (passage.type === 'cloze') {
+                const inputs = document.querySelectorAll('.cloze-input');
+                inputs.forEach(input => {
+                    const id = input.getAttribute('data-id');
+                    const ansData = passage.answers[id];
+                    const val = cleanString(input.value);
+                    const isCorrect = (val === cleanString(ansData.a)) || (ansData.alt && val === cleanString(ansData.alt));
+                    
+                    if (isCorrect) {
+                        input.classList.add('is-correct-input');
+                    } else {
+                        input.classList.add('is-wrong-input');
+                        input.value = input.value ? input.value + ` (${ansData.a})` : ansData.a;
+                    }
+                    input.disabled = true;
+
+                    const expSpan = document.getElementById(`exp-${id}`);
+                    expSpan.innerHTML = `<strong>Giải thích:</strong> ${ansData.e}`;
+                    expSpan.style.display = 'block';
+                    expSpan.style.color = isCorrect ? '#059669' : '#dc2626';
+                    expSpan.style.background = isCorrect ? '#d1fae5' : '#fee2e2';
+                });
+            } 
+            else if (passage.type === 'mcq') {
+                for (let key in passage.mcqs) {
+                    const qData = passage.mcqs[key];
+                    const selected = document.querySelector(`input[name="q_${key}"]:checked`);
+                    const correctAnsIndex = qData.ans;
+                    
+                    const correctLabel = document.getElementById(`label-${key}-${correctAnsIndex}`);
+                    correctLabel.classList.add('is-correct-box');
+
+                    if (selected) {
+                        const val = parseInt(selected.value);
+                        if (val !== correctAnsIndex) {
+                            const wrongLabel = document.getElementById(`label-${key}-${val}`);
+                            wrongLabel.classList.add('is-wrong-box');
+                        }
+                    }
+
+                    const radios = document.querySelectorAll(`input[name="q_${key}"]`);
+                    radios.forEach(r => r.disabled = true);
+
+                    document.getElementById(`exp-${key}`).style.display = 'block';
+                }
+            }
+
+            isChecked = true;
+            
+            // Ẩn nút Check, hiện nút Retry và Next
+            btnCheck.style.display = 'none';
+            btnRetry.style.display = 'inline-block';
+            btnNext.style.display = 'inline-block';
+            
+            if (currentIndex >= rawData.length - 1) {
+                btnNext.innerText = "Hoàn thành!";
+                btnNext.disabled = true;
+            } else {
+                btnNext.innerText = "Bài tiếp (Next) ⏎";
+                btnNext.disabled = false;
+            }
+        }
+
+        // Event Listeners
+        btnCheck.addEventListener('click', checkAnswers);
+        
+        btnRetry.addEventListener('click', () => {
+            // Render lại đúng bài hiện tại để người dùng có thể làm lại
+            renderPassage(currentIndex);
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (currentIndex < rawData.length - 1) {
+                currentIndex++;
+                renderPassage(currentIndex);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (!isChecked) {
+                    checkAnswers();
+                } else if (currentIndex < rawData.length - 1) {
+                    currentIndex++;
+                    renderPassage(currentIndex);
+                }
+            }
+        });
+
+        // Initialize App
+        renderPassage(0);
+    </script>
+</body>
+</html>
