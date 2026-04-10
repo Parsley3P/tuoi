@@ -466,6 +466,7 @@ const allQuestions = [
 let pool = [];
 let currentIndex = 0;
 let answered = false;
+let score = 0;
 
 function init() {
     // Random 40 questions
@@ -487,7 +488,9 @@ function init() {
 
 function renderQuestion() {
     if(currentIndex >= pool.length) {
-        document.getElementById('app').innerHTML = `<h2 style="color:var(--primary);">🎉 Hoàn thành bài tập!</h2><p>Bạn đã trả lời xong 40 câu hỏi.</p><button class="btn" onclick="location.reload()">Làm lại</button>`;
+        document.getElementById('app').innerHTML = `<h2 style="color:var(--primary);">🎉 Hoàn thành bài tập!</h2>
+        <p>Bạn đã trả lời đúng <strong>${score}/40</strong> câu.</p>
+        <button class="btn" onclick="location.reload()">Làm lại</button>`;
         return;
     }
     
@@ -559,6 +562,9 @@ function checkAnswer(userAns) {
             correctText = currentQuestion.a;
         }
     }
+
+    // ADD THIS LINE HERE:
+    if (isCorrect) score++;
     
     // Show Explanation
     const expDiv = document.getElementById('explanation');
