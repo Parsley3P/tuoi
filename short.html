@@ -1,1 +1,601 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESL Practice App</title>
+<style>
+    :root {
+        --primary: #3498db;
+        --primary-hover: #2980b9;
+        --correct: #2ecc71;
+        --correct-bg: #e8f8f5;
+        --wrong: #e74c3c;
+        --wrong-bg: #fdedec;
+        --text: #2c3e50;
+        --bg: #f4f7f6;
+    }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    #app {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        max-width: 650px;
+        width: 100%;
+        text-align: center;
+    }
+    #progress {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-bottom: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .question-text {
+        font-size: 1.25em;
+        margin-bottom: 25px;
+        text-align: left;
+        line-height: 1.5;
+    }
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: left;
+    }
+    label.option-label {
+        padding: 12px 15px;
+        border: 2px solid #ecf0f1;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        font-size: 1.05em;
+    }
+    label.option-label:hover {
+        border-color: var(--primary);
+        background-color: #fbfcff;
+    }
+    input[type="radio"] {
+        margin-right: 12px;
+        transform: scale(1.2);
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1em;
+        border: 2px solid #bdc3c7;
+        border-radius: 8px;
+        box-sizing: border-box;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+        border-color: var(--primary);
+    }
+    .btn {
+        margin-top: 20px;
+        padding: 12px 25px;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn:hover {
+        background-color: var(--primary-hover);
+    }
+    .correct-element {
+        border-color: var(--correct) !important;
+        background-color: var(--correct-bg) !important;
+        color: #27ae60;
+    }
+    .wrong-element {
+        border-color: var(--wrong) !important;
+        background-color: var(--wrong-bg) !important;
+        color: #c0392b;
+    }
+    #explanation {
+        margin-top: 25px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        display: none;
+        font-size: 1em;
+        text-align: left;
+        line-height: 1.5;
+    }
+    .exp-correct { background-color: var(--correct-bg); color: #27ae60; border-left: 5px solid var(--correct); }
+    .exp-wrong { background-color: var(--wrong-bg); color: #c0392b; border-left: 5px solid var(--wrong); }
+</style>
+</head>
+<body>
 
+<div id="app">
+    <div id="progress">Đang tải...</div>
+    <div id="question-container"></div>
+    <div id="explanation"></div>
+    <button id="next-btn" class="btn" style="display: none;">Tiếp theo (Enter)</button>
+</div>
+
+<script>
+const allQuestions = [
+    // Phần 1: MCQs
+    {q: "Which of the following is NOT a country?", o: ["Germany", "Polish", "France"], a: 1, e: "'Polish' là tính từ chỉ quốc tịch (người/tiếng Ba Lan), tên quốc gia là Poland."},
+    {q: "Europe, Africa and Asia are all ________.", o: ["continents", "countries", "capitals"], a: 0, e: "Đều là các lục địa (continents)."},
+    {q: "A little ________ runs through the garden of my parents' house.", o: ["sea", "river", "stream"], a: 2, e: "Stream (dòng suối nhỏ) hợp lý để chảy qua vườn nhà."},
+    {q: "The ________ of the United Kingdom is about 60 million.", o: ["population", "region", "border"], a: 0, e: "Population: Dân số."},
+    {q: "We went sailing on the sea during our holiday and stopped for lunch at a little ________.", o: ["coast", "cliff", "bay"], a: 2, e: "Bay (vịnh) là nơi tàu thuyền thường neo đậu."},
+    {q: "A ________ is a very dry place where few plants can survive.", o: ["valley", "forest", "desert"], a: 2, e: "Desert: Sa mạc (nơi rất khô hạn)."},
+    {q: "My brother was not a very good-looking child, but now he's an adult, he's very ________.", o: ["pretty", "beautiful", "handsome"], a: 2, e: "Handsome thường dùng để khen nam giới đẹp trai."},
+    {q: "People always say they love my ________ hair but I would prefer it to be straight.", o: ["long", "blonde", "curly"], a: 2, e: "Curly (tóc xoăn) trái nghĩa với straight (tóc thẳng)."},
+    {q: "You are looking very ________ today. Are you feeling OK?", o: ["pale", "light", "fair"], a: 0, e: "Pale: Tái nhợt (chỉ sắc mặt khi ốm)."},
+    {q: "These ________ are too tight! I'll have to lose some weight!", o: ["trainers", "trousers", "pockets"], a: 1, e: "Trousers (quần dài) quá chật nên cần giảm cân."},
+    {q: "Do you think this blouse ________ with this jacket?", o: ["matches", "fits", "goes"], a: 2, e: "Go with: Phối hợp, tông xuyệt tông với nhau."},
+    {q: "My trainers are old and ________ out but I still love them.", o: ["worn", "put", "taken"], a: 0, e: "Worn out: Bị mòn, sờn rách (dùng cho đồ vật)."},
+    {q: "A person who never lies is someone you can ________.", o: ["promise", "trust", "remember"], a: 1, e: "Trust: Tin tưởng."},
+    {q: "If I tell you a ________, you mustn't tell it to anyone else.", o: ["secret", "story", "message"], a: 0, e: "Secret: Bí mật."},
+    {q: "Sam was ________ when he fell off the horse.", o: ["annoying", "embarrassing", "embarrassed"], a: 2, e: "Embarrassed (adj-ed) dùng để chỉ cảm giác xấu hổ của con người."},
+    {q: "Max is very ________; I hope he can afford such expensive gifts.", o: ["reliable", "generous", "confident"], a: 1, e: "Generous: Hào phóng (mua quà đắt tiền)."},
+    {q: "Maria got very ________ with Harry when he refused to put his toys away.", o: ["nervous", "uncomfortable", "cross"], a: 2, e: "Get cross with someone: Tức giận với ai đó."},
+    {q: "Jess ________ with Sophie because she didn't go to the party.", o: ["fell out", "got on", "made up"], a: 0, e: "Fall out: Cãi vã, bất hòa."},
+    {q: "I'm so excited! My sister's just had a baby girl and I've always wanted a ________.", o: ["cousin", "granddaughter", "niece"], a: 2, e: "Niece: Cháu gái (con của anh/chị/em)."},
+    {q: "Many children are ________ by a single parent.", o: ["grown up", "brought up", "given up"], a: 1, e: "Bring up (bị động: brought up): Được nuôi dưỡng."},
+    {q: "After breakfast Josh ________ ready for school.", o: ["got", "did", "made"], a: 0, e: "Get ready: Chuẩn bị sẵn sàng."},
+    {q: "Sharon and Matt are having a party to ________ their wedding anniversary.", o: ["celebrate", "invite", "remember"], a: 0, e: "Celebrate: Kỷ niệm (ngày cưới)."},
+    {q: "The bridegroom's voice was shaking when he stood up and ________.", o: ["cut the cake", "put on the ring", "made a speech"], a: 2, e: "Make a speech: Phát biểu."},
+    {q: "All the wedding ________ brought presents.", o: ["relatives", "guests", "visitors"], a: 1, e: "Wedding guests: Khách mời dự đám cưới."},
+    {q: "I like my home because there is a lot of ________ for all my things.", o: ["space", "place", "area"], a: 0, e: "Space: Không gian (chứa đồ)."},
+    {q: "Which of these is NOT a room in a house?", o: ["basement", "cooker", "hall"], a: 1, e: "Cooker là cái bếp lò (thiết bị), không phải tên phòng."},
+    {q: "Could you pull down the ________, please? The light is shining in my eyes.", o: ["window", "curtains", "blind"], a: 2, e: "Blind: Rèm cuốn chắn sáng. Pull down the blind (Kéo rèm xuống)."},
+    {q: "Don't touch the ________ of the saucepan, it may be hot.", o: ["drawer", "handle", "iron"], a: 1, e: "Handle: Tay cầm (của nồi)."},
+    {q: "Which of the following would you NOT expect to find on a bed?", o: ["sheet", "pillow", "carpet"], a: 2, e: "Carpet (thảm) nằm trên sàn nhà, không phải trên giường."},
+    {q: "Which of the following is always found in a bathroom?", o: ["tool", "tap", "toy"], a: 1, e: "Tap: Vòi nước."},
+    
+    // Phần 2
+    {q: "The children were asked to pick up the ________ in the school playground.", o: ["waste", "litter", "pollution"], a: 1, e: "Litter: Rác vụn vứt bừa bãi."},
+    {q: "Which of the following is NOT a type of fuel?", o: ["petrol", "coal", "electricity"], a: 2, e: "Electricity (điện) là năng lượng, không phải nhiên liệu đốt (fuel)."},
+    {q: "We used to live in the city, but we much prefer it here in the ________.", o: ["countryside", "nature", "environment"], a: 0, e: "Countryside: Nông thôn (trái với city)."},
+    {q: "If you are telling someone the reason why something happened, you are ________.", o: ["persuading", "warning", "explaining"], a: 2, e: "Explaining: Giải thích."},
+    {q: "If your friend is giving you some ideas on how to use less electricity, she is ________.", o: ["advising", "comparing", "reviewing"], a: 0, e: "Advising: Khuyên bảo, đưa lời khuyên."},
+    {q: "I was a bit ________ with my test results - I will have to work harder next time!", o: ["worried", "nervous", "disappointed"], a: 2, e: "Disappointed: Thất vọng."},
+    {q: "How much will you ________ to repair these shoes?", o: ["cost", "charge", "pay"], a: 1, e: "Charge: Tính phí (Bạn sẽ tính phí bao nhiêu?)."},
+    {q: "The hairdryer broke the first time I used it so the store gave me a full ________.", o: ["receipt", "discount", "refund"], a: 2, e: "Refund: Sự hoàn tiền."},
+    {q: "You'll find pillows in the ________ department.", o: ["bed and bath linen", "nightclothes", "floor covering"], a: 0, e: "Bed and bath linen: Khu vực bán đồ ngủ, ga gối trải giường."},
+    {q: "The menswear department sells ________.", o: ["purses and handbags", "shirts and ties", "skirts and blouses"], a: 1, e: "Menswear: Đồ nam (áo sơ mi, cà vạt)."},
+    {q: "The salesman was wearing a ________.", o: ["smart new green woollen jacket.", "woollen green new smart jacket.", "green smart woollen new jacket."], a: 0, e: "Trật tự tính từ OSASCOMP: Opinion (smart) - Age (new) - Color (green) - Material (woollen)."},
+    {q: "If you are not satisfied with the service in this store ask to speak to the ________.", o: ["customer", "travel agent", "manager"], a: 2, e: "Manager: Quản lý cửa hàng."},
+    {q: "I don't really like strong, black coffee. I find the taste too ________.", o: ["sour", "hot", "bitter"], a: 2, e: "Bitter: Vị đắng."},
+    {q: "Can I offer you a ________ of chocolate cake to have with your tea?", o: ["slice", "loaf", "spoonful"], a: 0, e: "A slice of cake: Một lát/miếng bánh."},
+    {q: "Before you begin cooking, ________ the oven on to 220 degrees.", o: ["keep", "turn", "get"], a: 1, e: "Turn on: Bật (lò nướng)."},
+    {q: "One way to cook potatoes is to ________ them in a pan of water with a little salt.", o: ["bake", "fry", "boil"], a: 2, e: "Boil: Luộc bằng nước mặn."},
+    {q: "Before you begin cooking, it's a good idea to get all your ________ ready.", o: ["pieces", "ingredients", "parts"], a: 1, e: "Ingredients: Nguyên liệu nấu ăn."},
+    {q: "Beat the mixture until it is ________ and creamy.", o: ["smooth", "flat", "low"], a: 0, e: "Smooth: Mịn màng, nhuyễn."},
+    {q: "I find it more ________ to use my car when I go grocery shopping, but I always use the bus to get to work.", o: ["reliable", "convenient", "dangerous"], a: 1, e: "Convenient: Tiện lợi."},
+    {q: "We had a great holiday, but the ________ home was terrible. It took 6 hours to travel 100 km!", o: ["trip", "way", "journey"], a: 2, e: "Journey: Hành trình di chuyển (thường dùng cho chặng đường dài đi lại)."},
+    {q: "It took us a long time to get through all the ________ checks at the airport.", o: ["security", "terminal", "destination"], a: 0, e: "Security checks: Kiểm tra an ninh."},
+    {q: "After the plane has ________ off I can relax and start to enjoy the flight.", o: ["gone", "flown", "taken"], a: 2, e: "Take off (taken off): Cất cánh."},
+    {q: "Which of the following CANNOT be an occupation?", o: ["interpreter", "backpacker", "driver"], a: 1, e: "Backpacker là dân du lịch bụi, không phải nghề nghiệp (occupation)."},
+    {q: "The hotel has wonderful ________ including three restaurants and a 25 m swimming pool.", o: ["facilities", "bookings", "brochures"], a: 0, e: "Facilities: Cơ sở vật chất, tiện nghi."},
+    {q: "Students for the ________ class will need to bring their own paper and brushes.", o: ["photography", "drawing", "painting"], a: 2, e: "Painting: Hội họa (dùng cọ - brushes)."},
+    {q: "Would you like to see my ________ of old postcards?", o: ["demonstration", "collection", "performance"], a: 1, e: "Collection: Bộ sưu tập."},
+    {q: "If you're going sailing you'll need a ________ in case you fall in the water.", o: ["raincoat", "helmet", "life-jacket"], a: 2, e: "Life-jacket: Áo phao cứu sinh."},
+    {q: "It was impossible to find a ________ so we had to leave the car in the street.", o: ["parking", "park", "car park"], a: 2, e: "Car park: Bãi đỗ xe."},
+    {q: "I'm thinking of joining the local cycling club but ________ is quite expensive.", o: ["membership", "fee", "benefit"], a: 0, e: "Membership: Quyền hội viên / phí hội viên (có thể đứng độc lập chỉ chi phí tham gia)."},
+    {q: "We had ________ our neighbours about the party but they still complained about the noise.", o: ["invited", "warned", "apologised"], a: 1, e: "Warned: Đã cảnh báo/báo trước."},
+
+    // Phần 3
+    {q: "Which of these subjects would you study in a laboratory?", o: ["chemistry", "drama", "geography"], a: 0, e: "Chemistry (Hóa học) học ở phòng thí nghiệm (laboratory)."},
+    {q: "Which word means the opposite of pointless?", o: ["useful", "boring", "enjoyable"], a: 0, e: "Pointless (vô nghĩa/vô ích) >< Useful (hữu ích)."},
+    {q: "Where does a professor teach?", o: ["primary school", "secondary school", "university"], a: 2, e: "Professor (Giáo sư) dạy ở đại học (university)."},
+    {q: "Mr Wilson is a very ________ teacher. He is always calm and never gets angry.", o: ["funny", "patient", "strict"], a: 1, e: "Patient: Kiên nhẫn (bình tĩnh, không tức giận)."},
+    {q: "I didn't feel ready to take the ________ but I had no choice.", o: ["grade", "result", "exam"], a: 2, e: "Take an exam: Làm bài kiểm tra."},
+    {q: "Everyone always pays ________ in our history class.", o: ["attention", "progress", "interest"], a: 0, e: "Pay attention: Chú ý lắng nghe."},
+    {q: "Jim had such a sore ________ he could hardly speak.", o: ["headache", "cough", "throat"], a: 2, e: "Sore throat: Đau họng."},
+    {q: "Mrs Jones phoned the doctor to arrange ________ for that afternoon.", o: ["a dressing", "an appointment", "a prescription"], a: 1, e: "Arrange an appointment: Đặt lịch hẹn."},
+    {q: "Tim was fine but his car was ________ in the accident.", o: ["damaged", "injured", "hurt"], a: 0, e: "Damaged: Bị hư hại (dùng cho đồ vật/xe cộ). Injured/Hurt dùng cho người."},
+    {q: "My clothes are all too loose now because I've ________ so much weight.", o: ["put on", "lost", "taken off"], a: 1, e: "Lose weight: Giảm cân (quần áo trở nên lỏng - loose)."},
+    {q: "A ________ of fruit makes a more satisfying snack than a bar of chocolate.", o: ["piece", "can", "glass"], a: 0, e: "A piece of fruit: Một loại/trái hoa quả."},
+    {q: "You'll feel healthier if you ________.", o: ["play more computer games", "eat more fried food", "take more exercise"], a: 2, e: "Take exercise: Tập thể dục."},
+    {q: "Uncle Jack and Charlie ________ fishing.", o: ["are doing", "have gone", "have done"], a: 1, e: "Go fishing (Thì HTHT: have gone fishing)."},
+    {q: "Tina used to ________ gymnastics at school.", o: ["practise", "play", "do"], a: 2, e: "Do gymnastics: Tập thể dục dụng cụ."},
+    {q: "All the members of the hockey team must attend ________ after school today.", o: ["practise", "exercise", "training"], a: 2, e: "Training: Buổi tập luyện thể thao của một đội."},
+    {q: "Which person does not play in a match?", o: ["coach", "captain", "partner"], a: 0, e: "Coach: Huấn luyện viên (chỉ đạo bên ngoài, không trực tiếp chơi)."},
+    {q: "If you go to the gym ________ your level of fitness will improve.", o: ["annually", "regularly", "normally"], a: 1, e: "Regularly: Thường xuyên."},
+    {q: "Early morning is the ________ time at the swimming pool as most people prefer to stay in bed then.", o: ["quietest", "busiest", "fittest"], a: 0, e: "Quietest: Yên tĩnh, vắng vẻ nhất (vì mọi người còn ngủ)."},
+    {q: "Which of the following is NOT an insect?", o: ["bee", "fly", "bat"], a: 2, e: "Bat (dơi) là động vật có vú, không phải côn trùng."},
+    {q: "Which of the following is a farm animal?", o: ["camel", "monkey", "goat"], a: 2, e: "Goat (dê) là động vật nuôi ở trang trại."},
+    {q: "Which of these has teeth, but no fur?", o: ["zebra", "snake", "parrot"], a: 1, e: "Snake (Rắn) có răng nhưng không có lông mao (fur)."},
+    {q: "The tiger is a very beautiful animal but it is very ________ and people should not go near it.", o: ["dangerous", "amusing", "useful"], a: 0, e: "Dangerous: Nguy hiểm."},
+    {q: "This is a piece of land with water all around it.", o: ["island", "field", "hill"], a: 0, e: "Island: Hòn đảo (đất bao quanh bởi nước)."},
+    {q: "This is like a small, inland sea.", o: ["ocean", "lake", "river"], a: 1, e: "Lake: Hồ nước (giống vùng biển nhỏ trong đất liền)."},
+    {q: "Which of these types of weather has a lot of wind?", o: ["stormy", "icy", "foggy"], a: 0, e: "Stormy: Bão tố (thường kèm nhiều gió)."},
+    {q: "Trees are often blown down by ________.", o: ["thunder", "gales", "lightening"], a: 1, e: "Gales: Gió giật mạnh (làm đổ cây)."},
+    {q: "Average ________ are rising in many parts of the world.", o: ["thermometers", "degrees", "temperatures"], a: 2, e: "Temperatures: Nhiệt độ trung bình đang tăng lên."},
+    {q: "The rain was so ________ over the weekend that the river flooded its banks.", o: ["strong", "heavy", "high"], a: 1, e: "Heavy rain: Mưa to."},
+    {q: "It looks like we are going to have a beautiful, ________ day today.", o: ["clear", "clean", "light"], a: 0, e: "Clear day: Ngày trời quang đãng, trong xanh."},
+    {q: "The ________ in countries like Colombia depends more on how high up you are, than the time of year.", o: ["season", "climate", "time"], a: 1, e: "Climate: Khí hậu chung của một vùng."},
+
+    // Phần 4
+    {q: "I've seen every single programme in The Natural World series since it started in 1985 - it's my favourite ________.", o: ["sitcom", "thriller", "documentary"], a: 2, e: "Documentary: Phim tài liệu (về thế giới tự nhiên)."},
+    {q: "One World is a ________ programme that examines what is happening on the political scene today.", o: ["current affairs", "historical documentary", "natural history"], a: 0, e: "Current affairs: Chương trình thời sự chính trị."},
+    {q: "Let's get Dad this ________ for his birthday. He's not too keen on fiction.", o: ["thriller", "horror story", "travel book"], a: 2, e: "Travel book không phải là sách viễn tưởng (fiction), phù hợp với người không thích fiction."},
+    {q: "According to this report, a lot of people who buy best-selling books never actually ________ them.", o: ["finish", "end", "complete"], a: 0, e: "Finish a book: Đọc xong một cuốn sách."},
+    {q: "It's much cheaper to ________ books from the library than it is to buy them.", o: ["lend", "take", "borrow"], a: 2, e: "Borrow: Mượn (từ thư viện)."},
+    {q: "Before I buy tickets for a show I always read the ________ in the newspapers to make sure it's worth seeing.", o: ["reviews", "articles", "headlines"], a: 0, e: "Reviews: Bài đánh giá/nhận xét nghệ thuật."},
+    {q: "I usually walk to school as the trains and buses are so ________ in the morning.", o: ["quiet", "crowded", "exciting"], a: 1, e: "Crowded: Đông đúc (lý do nên đi bộ thay vì đi xe buýt)."},
+    {q: "The ________ is much more beautiful in the countryside than in the town.", o: ["scenery", "atmosphere", "transport"], a: 0, e: "Scenery: Phong cảnh thiên nhiên."},
+    {q: "Please tell me what the next ________ says. I want to check that we are on the right road.", o: ["crossroads", "signpost", "roundabout"], a: 1, e: "Signpost: Biển báo chỉ đường (có chữ để đọc)."},
+    {q: "Which of the following is what is left of an ancient building?", o: ["ruin", "cathedral", "gallery"], a: 0, e: "Ruin: Tàn tích."},
+    {q: "Where would you go if you wanted to buy medicine?", o: ["grocer's", "department store", "chemist's"], a: 2, e: "Chemist's (= Pharmacy): Tiệm thuốc."},
+    {q: "Which of these has water coming out of it and is often found in town squares?", o: ["pavement", "fountain", "tower"], a: 1, e: "Fountain: Đài phun nước."},
+    {q: "We were sitting at the back but we could ________ the actors very clearly.", o: ["watch", "look", "see"], a: 2, e: "See: Nhìn thấy (chỉ khả năng thị giác tự nhiên do không bị cản trở)."},
+    {q: "You must collect your tickets at least half an hour before the ________ starts.", o: ["drama", "theatre", "play"], a: 2, e: "Play: Vở kịch sân khấu."},
+    {q: "The ________ in the jazz club had an amazing keyboard technique.", o: ["guitarist", "pianist", "drummer"], a: 1, e: "Pianist: Nhạc công piano (liên quan tới keyboard technique)."},
+    {q: "I'm in a drama club. I'm no good at acting but I do jobs like moving the ________.", o: ["scenery", "lighting", "curtain"], a: 0, e: "Scenery: Ở sân khấu có nghĩa là phông màn cảnh nền cần di chuyển."},
+    {q: "Harry Potter and James Bond are both very successful film ________.", o: ["actors", "scenes", "series"], a: 2, e: "Series: Loạt phim dài kỳ."},
+    {q: "I don't want to see a ________. I prefer movies that are acted by real people.", o: ["cartoon", "comedy", "thriller"], a: 0, e: "Cartoon: Hoạt hình (không phải do người thật diễn)."},
+    {q: "If I lose my friends in a crowded disco I often ________ to find them again.", o: ["send a text", "call on the landline", "write an email"], a: 0, e: "Send a text: Gửi tin nhắn điện thoại (nhanh gọn trong sàn nhảy)."},
+    {q: "I forgot to save my work before I left the room and my little brother came and ________ it all.", o: ["crashed", "emptied", "deleted"], a: 2, e: "Deleted: Xóa mất (dữ liệu máy tính)."},
+    {q: "My internet connection takes ages because I have to ________ it up through the telephone.", o: ["dial", "access", "call"], a: 0, e: "Dial up: Quay số để kết nối mạng internet kiểu cũ."},
+    {q: "You are not supposed to ________ movies from the internet and anyway the quality is often very poor.", o: ["print", "film", "download"], a: 2, e: "Download: Tải xuống (phim ảnh trên mạng)."},
+    {q: "In this new group of houses there are several smart homes where everything is ________ by computer.", o: ["controlled", "ordered", "produced"], a: 0, e: "Controlled: Được điều khiển (bởi máy tính)."},
+    {q: "This new laptop is extremely light. It ________ less than two kilos.", o: ["measures", "weighs", "contains"], a: 1, e: "Weighs: Nặng (trọng lượng)."},
+    {q: "Which of the following jobs is a profession?", o: ["labourer", "carpenter", "lawyer"], a: 2, e: "Profession chỉ nghề nghiệp mang tính học thuật/chuyên môn cao (Luật sư)."},
+    {q: "Which of these people keeps a building safe at night?", o: ["security guard", "architect", "builder"], a: 0, e: "Security guard: Nhân viên bảo vệ."},
+    {q: "A judge ________ lawyers and people who may have broken the law.", o: ["works for", "deals with", "looks after"], a: 1, e: "Deals with: Giải quyết, làm việc với (trong tòa án)."},
+    {q: "I had a higher ________ in my old job but I am much happier in my new job.", o: ["pay", "salary", "money"], a: 1, e: "Salary: Mức lương cứng/Lương cố định."},
+    {q: "I applied for the job and was asked to ________ an interview the following day.", o: ["attend", "receive", "visit"], a: 0, e: "Attend an interview: Tham dự phỏng vấn."},
+    {q: "Good afternoon. Could you tell me when you are going to ________ the sofa I ordered from you?", o: ["arrange", "deliver", "manage"], a: 1, e: "Deliver: Giao hàng (sofa)."},
+
+    // Phần 5
+    {q: "When you get to your ________, you have to show your ticket to leave the station.", o: ["destination", "harbour", "souvenir", "passport"], a: 0, e: "Destination: Điểm đến."},
+    {q: "Brazil ________ coffee all over the world.", o: ["invests", "demands", "exports", "affords"], a: 2, e: "Exports: Xuất khẩu."},
+    {q: "How do you ________ 'csar'?", o: ["interrupt", "swear", "guess", "pronounce"], a: 3, e: "Pronounce: Phát âm."},
+    {q: "Dogs make very ________ pets. They'll always stay by your side.", o: ["mental", "private", "loyal", "digital"], a: 2, e: "Loyal: Trung thành."},
+    {q: "Let's go for a swim as soon as we ________ the hotel!", o: ["arrive", "get", "reach", "meet"], a: 2, e: "Reach + tân ngữ trực tiếp (đến nơi). Arrive cần 'at/in', get cần 'to'."},
+    {q: "You have to ________ or you won't understand the explanation.", o: ["concentrate", "contact", "consider", "involve"], a: 0, e: "Concentrate: Tập trung."},
+    {q: "There's a train coming. Don't stand at the edge of the ________.", o: ["property", "link", "platform", "resort"], a: 2, e: "Platform: Sân ga."},
+    {q: "I ________ a lot of money on my credit cards and I don't know if I can pay it back.", o: ["own", "obtain", "cost", "owe"], a: 3, e: "Owe: Nợ tiền."},
+    
+    // Rewrite 1
+    {q: "My computer doesn't work, so I can't e-mail you. (Sử dụng từ: wrong)<br>There's ________ my computer, so I can't e-mail you.", a: ["something wrong with"], e: "Cấu trúc 'There is something wrong with...' (Có vấn đề gì đó với...)."},
+    {q: "When we started our journey towards the mountains, the sun was shining. (Sử dụng từ: off)<br>When we ________ towards the mountains, the sun was shining.", a: ["set off"], e: "Set off = Start a journey (Khởi hành)."},
+
+    // Phần 6
+    {q: "I'm not old enough to ________ in this election.", o: ["commit", "protest", "vote", "admit"], a: 2, e: "Vote: Bỏ phiếu (election)."},
+    {q: "Is it really your ________ to be a professional footballer?", o: ["application", "profession", "ambition", "contract"], a: 2, e: "Ambition: Ước mơ, hoài bão."},
+    {q: "What we eat ________ how much energy we have during the day.", o: ["balances", "contains", "benefits", "affects"], a: 3, e: "Affects: Gây ảnh hưởng tới."},
+    {q: "These jeans are too ________. I think I need a bigger pair.", o: ["tight", "loose", "rough", "smooth"], a: 0, e: "Tight: Chật chội (cần cỡ to hơn)."},
+    {q: "Britain's ________ is fairly mild - it's never very hot or very cold.", o: ["forecast", "climate", "environment", "heatwave"], a: 1, e: "Climate: Khí hậu."},
+    {q: "I fell over in front of everyone at lunch. It was so ________!", o: ["embarrassing", "naughty", "romantic", "depressed"], a: 0, e: "Embarrassing (adj-ing) miêu tả hoàn cảnh gây xấu hổ."},
+    {q: "I asked Jim to help me with the project, but he ________.", o: ["doubted", "denied", "refused", "warned"], a: 2, e: "Refused: Từ chối."},
+    {q: "Jeanne, ________ us that joke about the guy who knocks on the door.", o: ["say", "speak", "make", "tell"], a: 3, e: "Tell a joke: Kể chuyện cười."},
+
+    // Rewrite 2
+    {q: "I did German lessons until last year, but I stopped because I didn't have time. (Sử dụng từ: used)<br>________ but I stopped last year because I didn't have time.", a: ["I used to do German lessons", "I used to take German lessons"], e: "Cấu trúc Used to + V-inf (thói quen trong quá khứ)."},
+    {q: "When you make a mistake, put a line through it and write the correct answer above. (Sử dụng từ: cross)<br>When you make a mistake, ________ and write the correct answer above.", a: ["cross it out"], e: "Cross out = Put a line through (Gạch bỏ)."},
+    {q: "Have you played Monopoly before? (Sử dụng từ: time)<br>Is this the ________ played Monopoly?", a: ["first time you have"], e: "Cấu trúc: This is the first time + HTHT (Đây là lần đầu...)."},
+    {q: "I started studying at six and now it's ten o'clock. (Sử dụng từ: for)<br>It's ten o'clock and I ________ four hours.", a: ["have been studying for", "have studied for"], e: "Hiện tại hoàn thành tiếp diễn nhấn mạnh quá trình kéo dài 4 tiếng."},
+
+    // Grammar & Tenses
+    {q: "I like basketball, but I ________ volleyball.", o: ["prefer", "have preferred", "am preferring", "had preferred"], a: 0, e: "Prefer là động từ chỉ trạng thái (stative verb), không dùng V-ing, chia ở HTĐ."},
+    {q: "We won the match because we ________ hard the week before.", o: ["have practised", "practise", "had been practising", "have been practising"], a: 2, e: "Quá khứ hoàn thành tiếp diễn (xảy ra liên tục trước 1 mốc trong quá khứ)."},
+    {q: "Shirley ________ to speak Russian before she met Ivan.", o: ["use not", "wasn't used", "hasn't used", "didn't use"], a: 3, e: "Phủ định của used to là didn't use to."},
+    {q: "I don't think Adam ________ what the coach told us.", o: ["was understanding", "understood", "has been understanding", "had been understanding"], a: 1, e: "Understand là động từ chỉ nhận thức, chia QKĐ, không dùng tiếp diễn."},
+    {q: "Before the exam, I ________ everything - except the questions they asked!", o: ["had studied", "study", "have studied", "was studying"], a: 0, e: "Quá khứ hoàn thành (had + PII) xảy ra trước một hành động quá khứ khác (the exam)."},
+    {q: "You look worried. ________ about what happened last night?", o: ["Do you think", "Are you thinking", "You think", "You are thinking"], a: 1, e: "Think chỉ hành động suy nghĩ (đang nghĩ về) thì dùng được HTTD."},
+    {q: "When you rang, I ________ my geography homework.", o: ["did", "was doing", "have done", "have been doing"], a: 1, e: "Hành động đang diễn ra trong quá khứ (was doing) thì bị cắt ngang (rang)."},
+    {q: "Ivor ________ cricket for long, but he's already quite good at it.", o: ["isn't playing", "hasn't been playing", "doesn't play", "didn't play"], a: 1, e: "Dùng HTHT tiếp diễn để nhấn mạnh quá trình từ QK đến HT (for long)."},
+    {q: "My younger sister is really ________ and I'm sure she'll go to university when she's older.", o: ["mental", "expert", "clever", "entertaining"], a: 2, e: "Clever: Thông minh."},
+    {q: "You should ________ sure you've answered all the questions on the exam paper.", o: ["do", "have", "take", "make"], a: 3, e: "Make sure: Đảm bảo chắc chắn."},
+    {q: "Have you ________ studying astronomy at university?", o: ["considered", "guessed", "thought", "wondered"], a: 0, e: "Consider + V-ing (Cân nhắc việc gì)."},
+    {q: "Collecting stamps gives me a lot of ________ and helps me to relax.", o: ["qualification", "instruction", "rhythm", "pleasure"], a: 3, e: "Pleasure: Niềm vui, sự thoải mái."},
+    {q: "Have you always been keen ________ motorbikes?", o: ["for", "on", "with", "in"], a: 1, e: "Keen on = Thích thú với."},
+    {q: "________ conclusion, I would say that having a pet has many advantages.", o: ["For", "In", "On", "By"], a: 1, e: "In conclusion: Tóm lại / Để kết luận."},
+    {q: "I ________ a lot of fun at your party. When are you having another one?", o: ["took", "got", "made", "had"], a: 3, e: "Have fun (QK: had fun): Vui vẻ."},
+    {q: "When he was at university, my dad did a ________ in maths.", o: ["study", "subject", "degree", "mark"], a: 2, e: "Do a degree: Học lấy bằng cấp đại học."},
+
+    // Mixed Grammar Q1-Q23
+    {q: "David ________ tennis at the moment.", o: ["playing", "plays", "are playing", "is playing"], a: 3, e: "HT tiếp diễn với dấu hiệu 'at the moment'."},
+    {q: "I'm not very good ________ singing and I hate standing up in front of people.", o: ["at", "for", "on", "in"], a: 0, e: "Good at + V-ing/N: Giỏi việc gì."},
+    {q: "Peter: 'Hi Mark. ________'<br>Mark: 'It was great in the end but we had a terrible time at the beginning.'", o: ["Is there anything I can do?", "What were you doing?", "Where did you go?", "How was your camping trip?"], a: 3, e: "Câu trả lời đánh giá chất lượng chuyến đi nên câu hỏi là How was..."},
+    {q: "I ________ my emails every morning and evening.", o: ["play", "check", "spend", "eat"], a: 1, e: "Check emails: Kiểm tra thư."},
+    {q: "There's ________ milk in the fridge.", o: ["many", "much", "a little", "a few"], a: 1, e: "Milk là N không đếm được. Dùng 'much' với số lượng lớn chung chung, hoặc a little. Ở đây 'much' hợp lý nhất nếu nhấn mạnh khối lượng."},
+    {q: "I've got ________ in this ear. I couldn't sleep last night because it was so painful.", o: ["a temperature", "a sore throat", "a runny nose", "an earache"], a: 3, e: "Earache: Đau tai."},
+    {q: "When you finish writing a letter, you can put it in a/an ________ and then you post it.", o: ["eggshell", "jar", "newspaper", "envelope"], a: 3, e: "Envelope: Phong bì thư."},
+    {q: "You can get on a train from a ________.", o: ["rank", "gate", "platform", "stop"], a: 2, e: "Platform: Sân ga xe lửa."},
+    {q: "Would you mind ________ the window?", o: ["open", "opening", "to open", "opened"], a: 1, e: "Mind + V-ing: Phiền làm gì đó."},
+    {q: "There's ________ pollution in the river.", o: ["some", "any", "many", "a few"], a: 0, e: "Câu khẳng định dùng 'some'. Pollution không đếm được."},
+    {q: "The children love ________ cards with their grandfather.", o: ["doing", "going", "playing", "having"], a: 2, e: "Play cards: Chơi bài."},
+    {q: "Shop-assistant: 'Good morning. ________'<br>Customer: 'Hi, I'm calling about an order from your website.'", o: ["How does that work?", "Do you have the order number?", "Would you like to cancel the order?", "Can I help you?"], a: 3, e: "Câu chào khách chuẩn mực: Can I help you?"},
+    {q: "She ________ yoga every weekend.", o: ["goes", "does", "plays", "likes"], a: 1, e: "Do yoga: Tập yoga."},
+    {q: "He ________ to places and regions.", o: ["currently is travelling", "currently travels", "is currently travelling", "travels currently"], a: 2, e: "Trạng từ 'currently' đứng sau to be trong thì HT tiếp diễn."},
+    {q: "A teacher needs to be ________ because the students need time to learn.", o: ["patience", "impatient", "patient", "patiently"], a: 2, e: "Cần một tính từ sau to be. Patient: Kiên nhẫn."},
+    {q: "Sarah wants to be the best at everything. She's very ________.", o: ["risky", "careful", "ambition", "ambitious"], a: 3, e: "Ambitious (adj): Tham vọng."},
+    {q: "They ________ see his new film last night.", o: ["aren't seeing", "weren't seeing", "didn't see", "don't see"], a: 2, e: "Last night là dấu hiệu QK đơn -> didn't see."},
+    {q: "Over 200 ________ entered the race.", o: ["competitors", "competitive", "competitions", "competes"], a: 0, e: "Cần N chỉ người số nhiều. Competitors: Người thi đấu."},
+    {q: "Petrol cars are ________ expensive than electric cars.", o: ["more much", "so", "much more", "much"], a: 2, e: "Much + So sánh hơn (more expensive) để nhấn mạnh."},
+    {q: "I ________ into town every Saturday.", o: ["walks", "walking", "walk", "to walk"], a: 2, e: "Chủ ngữ I đi với động từ nguyên thể ở HT đơn."},
+    {q: "I'm listening to a radio programme about ________.", o: ["cycling", "cycled", "cycle", "to cycle"], a: 0, e: "Sau giới từ 'about' cần V-ing (Cycling: môn đạp xe)."},
+    {q: "She ________ her shopping at Harrods every Friday.", o: ["takes", "goes", "makes", "does"], a: 3, e: "Do the shopping: Đi mua sắm đồ dùng."},
+    {q: "India is ________ hotter than Norway.", o: ["very", "much", "more", "so"], a: 1, e: "Dùng 'much' để nhấn mạnh tính từ so sánh hơn (hotter)."},
+
+    // Rel Clauses / Connectors / Modals Fill-ins
+    {q: "The waitress ________ served us was impolite and impatient.", a: ["who", "that"], e: "Đại từ quan hệ chỉ người làm chủ ngữ."},
+    {q: "A cemetery is a place ________ people are buried.", a: ["where", "in which"], e: "Đại từ chỉ nơi chốn."},
+    {q: "The place ________ we spent our holidays was really beautiful.", a: ["where"], e: "Đại từ chỉ nơi chốn (tại nơi mà)."},
+    {q: "The building ________ was destroyed in the fire has now been rebuilt.", a: ["which", "that"], e: "Đại từ quan hệ chỉ vật làm chủ ngữ."},
+    {q: "The people ________ were arrested have now been released.", a: ["who", "that"], e: "Đại từ quan hệ chỉ người làm chủ ngữ."},
+    {q: "She wanted to know ________ I could speak any foreign languages.", a: ["if", "whether"], e: "Câu tường thuật dạng Yes/No question dùng If/Whether."},
+    {q: "She asked whether I ________ a driving licence.", a: ["had"], e: "Lùi thì (HTĐ -> QKĐ) trong câu tường thuật."},
+    {q: "She asked ________ I was willing to travel.", a: ["if", "whether"], e: "Câu tường thuật Yes/No question."},
+    {q: "She asked ________ I had applied for the job.", a: ["if", "whether"], e: "Câu tường thuật Yes/No question."},
+    {q: "________ did the accident happen? (Hỏi về cách thức/thời gian/địa điểm)", a: ["how", "when", "where"], e: "Từ để hỏi phù hợp (How/When/Where đều được)."},
+    {q: "This machine is very easy to use. ________ can learn to use it very quickly.", a: ["anyone", "anybody"], e: "Anyone: Bất kỳ ai (dùng trong câu khẳng định mang nghĩa phổ quát)."},
+    {q: "There was hardly ________ on the beach. It was almost deserted.", a: ["anyone", "anybody"], e: "Hardly mang nghĩa phủ định nên dùng anyone/anybody."},
+    {q: "You must be hungry. Would you like ________ to eat?", a: ["something"], e: "Lời mời dùng 'something'."},
+    {q: "They stay at home all the time. They never seem to go ________.", a: ["anywhere"], e: "Never là phủ định, dùng 'anywhere'."},
+    {q: "There's ________ at the door. Can you go and see who it is?", a: ["someone", "somebody"], e: "Câu khẳng định dùng someone/somebody."},
+    {q: "If you took more exercise, you ________ feel better.", a: ["would"], e: "Câu điều kiện loại 2 (would + V)."},
+    {q: "I ________ buy that coat if I were you.", a: ["would"], e: "Câu điều kiện loại 2 khuyên nhủ (If I were you)."},
+    {q: "My memory is getting worse. I keep ________ things.", a: ["forgetting"], e: "Keep + V-ing: Liên tục làm gì."},
+    {q: "If you invest your money in the stock market, you risk ________ it.", a: ["losing"], e: "Risk + V-ing: Có nguy cơ làm sao."},
+    {q: "It was a nice day, so we decided ________ for a walk.", a: ["to go"], e: "Decide + to V."},
+    {q: "Our neighbor threatened ________ the police if we didn't stop the noise.", a: ["to call"], e: "Threaten + to V: Đe dọa làm gì."},
+    {q: "In some parts of the country, prices are higher ________ in others.", a: ["than"], e: "Cấu trúc so sánh hơn (higher than)."},
+    {q: "I couldn't get to sleep ________ the noise.", a: ["because of", "due to"], e: "Sau khoảng trống là Noun phrase nên dùng 'because of / due to'."},
+    {q: "She accepted the job ________ the salary, which was very low.", a: ["despite", "in spite of"], e: "Mặc dù (cộng với danh từ/cụm N)."},
+    {q: "We enjoyed our holiday ________ it rained a lot.", a: ["although", "even though", "though"], e: "Mặc dù (cộng với một mệnh đề S+V)."},
+    {q: "An investigation into the accident will be carried ________ as soon as possible.", a: ["out"], e: "Carry out: Tiến hành (điều tra)."},
+    {q: "When I realized I was wrong, I apologized to them ________ my mistake.", a: ["for"], e: "Apologize to sb FOR sth: Xin lỗi về việc gì."},
+    {q: "The police never found ________ who committed the murder.", a: ["anyone", "the person"], e: "The person/Anyone who..."},
+    {q: "Kate is very fond ________ her younger brother.", a: ["of"], e: "Fond of: Thích/yêu thương."},
+    {q: "These days everybody is aware ________ the dangers of smoking.", a: ["of"], e: "Aware of: Nhận thức được."},
+    {q: "Helen works hard and she's extremely good ________ her job.", a: ["at"], e: "Good at: Giỏi về."},
+    {q: "Do you know anyone who might be interested ________ buying an old car?", a: ["in"], e: "Interested in: Quan tâm, hứng thú."},
+    {q: "I'm tired ________ doing the same thing every day. I need a change.", a: ["of"], e: "Tired of: Chán nản với."},
+    {q: "I enjoyed the film ________ the silly story.", a: ["despite", "in spite of"], e: "Cộng cụm danh từ (silly story)."},
+
+    // Transformations
+    {q: "I don't agree with your opinion of the new shopping centre. (wrong)<br>I think you ________________________ the new shopping centre.", a: ["are wrong about"], e: "Be wrong about: Sai lầm về điều gì."},
+    {q: "Do they rent cars here? (rent)<br>Do they have ________________________ here?", a: ["cars for rent"], e: "Have cars for rent: Có xe cho thuê."},
+    
+    // Articles, Prepositions & Vocab
+    {q: "I heard there's ________ new sports shop in town. Let's see what they have.", o: ["a", "the", "an", "one"], a: 0, e: "A new shop: Nhắc đến lần đầu, đếm được số ít."},
+    {q: "I don't have ________ money, so I'll have to wait to get a new coat.", o: ["a piece of", "a few", "much", "many"], a: 2, e: "Phủ định với N không đếm được (money) dùng much."},
+    {q: "It's going to be very expensive to send a person to ________?", o: ["a Mars", "one Mars", "the Mars", "Mars"], a: 3, e: "Tên hành tinh (Mars) không dùng mạo từ."},
+    {q: "I don't know much about ________ computers, so I asked the assistant for ________ advice.", o: ["a lot", "many", "a few", "a little"], a: 3, e: "Advice là danh từ không đếm được -> a little advice."},
+    {q: "In my experience, ________ are very friendly.", o: ["Chinese", "a Chinese", "the Chinese", "this Chinese"], a: 2, e: "The + nationality (The Chinese) = Người dân nước đó."},
+    {q: "Dad has to go to ________ early tomorrow to meet an important customer.", o: ["work", "the work", "a work", "that work"], a: 0, e: "Go to work: Đi làm (cụm từ cố định không mạo từ)."},
+    {q: "Which is more important - money or ________?", o: ["environment", "the environment", "an environment", "one environment"], a: 1, e: "The environment: Môi trường (danh từ duy nhất)."},
+    {q: "Apparently, it's the largest computer store in ________.", o: ["an Europe", "a Europe", "the Europe", "Europe"], a: 3, e: "Tên châu lục (Europe) không có mạo từ."},
+    {q: "Let me just add ________ what I'm buying to see if I've got enough money.", o: ["on", "down", "over", "up"], a: 3, e: "Add up: Cộng tổng lại."},
+    {q: "Bob ________ a lot of money in his brother's business and made a profit.", o: ["spent", "invested", "saved", "owed"], a: 1, e: "Invest in: Đầu tư vào."},
+    {q: "I'm saving all my pocket money ________ to buy a new PlayStation.", o: ["out", "down", "up", "away"], a: 2, e: "Save up: Tiết kiệm tiền."},
+    {q: "The old man took the book ________ from the shelf and looked at the price.", o: ["up", "down", "out", "in"], a: 1, e: "Take down: Lấy xuống (từ trên kệ)."},
+    {q: "I couldn't sell my old magazines, so I gave them ________.", o: ["over", "off", "up", "away"], a: 3, e: "Give away: Cho tặng (không lấy tiền)."},
+    {q: "I gave the waiter a €50 note and waited for my ________.", o: ["change", "supply", "cash", "cost"], a: 0, e: "Change: Tiền thừa/Tiền thối lại."},
+    {q: "Home Lovers have got lots of ________ in their sale this year.", o: ["debts", "fortunes", "bargains", "fees"], a: 2, e: "Bargains: Món hàng hời (trong đợt giảm giá)."},
+    {q: "I usually spend any money I have ________ sweets and video games.", o: ["with", "to", "on", "at"], a: 2, e: "Spend money ON something: Tiêu tiền vào việc gì."},
+
+    // Word Formations
+    {q: "Why do all ________________ (SCIENCE) have untidy hair?", a: ["scientists"], e: "Danh từ chỉ người số nhiều (Các nhà khoa học)."},
+    {q: "Pour the ________________ (BOIL) water over the tea bag and leave for a few minutes.", a: ["boiling"], e: "Boiling water: Nước sôi (hiện tại phân từ dùng làm tính từ)."},
+    {q: "Make sure your ________________ (MEASURE) are accurate.", a: ["measurements"], e: "Danh từ số nhiều (Các phép đo lường)."},
+    {q: "My brother is studying ________________ (CHEMIST) at university.", a: ["chemistry"], e: "Hóa học (ngành học)."},
+
+    // Rel Clauses & Modals MCQs
+    {q: "Did someone help Alison or did she do all the calculations ________?", o: ["her", "hers", "herself"], a: 2, e: "Herself: Tự cô ấy làm (Đại từ phản thân)."},
+    {q: "That's not your calculator. It's ________.", o: ["me", "mine", "my"], a: 1, e: "Mine = My calculator (Đại từ sở hữu)."},
+    {q: "Einstein is the person ________ showed that time can speed up and slow down.", o: ["which", "who", "whose"], a: 1, e: "Who thay thế cho người (the person)."},
+    {q: "Do you know ________ idea it was? Was it Greg's or Fiona's?", o: ["who", "which", "whose"], a: 2, e: "Whose + N: Của ai."},
+    {q: "This is the laboratory ________ we do all the experiments.", o: ["that", "which", "where"], a: 2, e: "Where: Nơi mà (chỉ địa điểm)."},
+    {q: "Novosibirsk, ________ is a big city in Siberia, is famous for its university.", o: ["who", "which", "where"], a: 1, e: "Which thay thế cho tên vật/địa điểm đóng vai trò chủ ngữ trong mệnh đề quan hệ không xác định."},
+    {q: "That's the girl ________ father says he's invented a time machine!", o: ["who", "whose", "that"], a: 1, e: "Whose + N: Chỉ sở hữu (bố của cô gái)."},
+    {q: "Is this our DVD or is it ________?", o: ["them", "their", "theirs"], a: 2, e: "Theirs = Their DVD (Đại từ sở hữu)."},
+
+    // Transformations
+    {q: "Jill described her holiday to me. (told)<br>Jill ________________________ her holiday.", a: ["told me about"], e: "Tell sb about sth = Describe sth to sb."},
+    {q: "Companies shouldn't ring people at home to sell them things. (ought)<br>Companies ________________________ ring people at home to sell them things.", a: ["ought not to"], e: "Shouldn't = Ought not to."},
+    {q: "I'm almost certain this phone is broken because I can't hear anything. (must)<br>This phone ________________________ because I can't hear anything.", a: ["must be broken"], e: "Must + V: Suy luận logic ở hiện tại (Chắc hẳn là...)."},
+
+    // Modals
+    {q: "I couldn't ________ the programme so I turned the TV up.", o: ["hear", "heard", "hearing", "to hear"], a: 0, e: "Couldn't + V-inf."},
+    {q: "My brother ________ write when he was just three years old.", o: ["can", "could", "might", "should"], a: 1, e: "Could: Khả năng trong quá khứ."},
+    {q: "________ I use your computer to check my e-mail?", o: ["Will", "Ought", "May", "Would"], a: 2, e: "May I: Xin phép lịch sự."},
+    {q: "My teacher thinks I ________ to pay more attention in class.", o: ["might", "may", "ought", "should"], a: 2, e: "Chỉ có Ought đi với 'to V'."},
+    {q: "All compositions ________ be handed in to me by Friday at the latest.", o: ["must", "need", "have", "ought"], a: 0, e: "Must: Bắt buộc (nội quy/quyết định của người nói)."},
+    {q: "That ________ be my mobile - mine is silver and that one is black.", o: ["mustn't", "shouldn't", "wouldn't", "can't"], a: 3, e: "Can't be: Chắc chắn không phải (phủ định của suy luận)."},
+    {q: "I sent the letter yesterday, so it ________ get there tomorrow.", o: ["can", "need", "should", "ought"], a: 2, e: "Should: Suy đoán có cơ sở (Đáng lẽ ra sẽ)."},
+    {q: "Did you ________ to pay to send the package back?", o: ["must", "ought", "should", "have"], a: 3, e: "Trợ động từ Did đi với 'have to'."},
+
+    // Prepositions, Vocab & Tags
+    {q: "Did you write to Irina ________ her visit this summer?", o: ["for", "of", "on", "about"], a: 3, e: "Write about: Viết về cái gì."},
+    {q: "You have to ________ on the word 'Next' to see the next web page.", o: ["press", "click", "push", "hit"], a: 1, e: "Click on: Nhấn chuột vào."},
+    {q: "I read about the accident ________ the Internet.", o: ["on", "in", "to", "at"], a: 0, e: "On the Internet."},
+    {q: "Please don't ________ me when I'm speaking.", o: ["break", "prevent", "pause", "interrupt"], a: 3, e: "Interrupt: Ngắt lời."},
+    {q: "When you have written your letter, save the ________ in 'My Documents'.", o: ["paper", "notebook", "file", "line"], a: 2, e: "Save the file: Lưu tệp tin."},
+    {q: "I finally managed to ________ Simon to lend me his laptop.", o: ["persuade", "make", "say", "allow"], a: 0, e: "Persuade sb to V: Thuyết phục ai làm gì."},
+    {q: "Even when he's very angry, my dad never ________ or uses bad language.", o: ["swears", "tells", "whispers", "broadcasts"], a: 0, e: "Swear: Chửi thề."},
+    {q: "I didn't read the message carefully. I just glanced ________ it.", o: ["with", "to", "on", "at"], a: 3, e: "Glance at: Liếc nhìn."},
+    {q: "You should ________ me you were going to be late!", o: ["tell", "have told", "to tell", "to have told"], a: 1, e: "Should have PII: Lẽ ra nên làm gì (trách móc trong QK)."},
+    {q: "The football match ________ have finished by now. It started over four hours ago!", o: ["must", "ought", "can't", "wouldn't"], a: 0, e: "Must have PII: Suy luận chắc chắn trong quá khứ."},
+    {q: "I wonder if you know ________.", o: ["is the post office?", "is the post office.", "the post office is?", "where the post office is."], a: 3, e: "Câu hỏi gián tiếp: Từ để hỏi + S + V (không đảo ngữ)."},
+    {q: "You don't eat meat, ________ you?", o: ["are", "eat", "have", "do"], a: 3, e: "Câu hỏi đuôi với động từ thường ở thì HTĐ phủ định -> do you?"},
+    {q: "Let's see what's on at the cinema, ________?", o: ["do we", "shall us", "shall we", "let us"], a: 2, e: "Câu hỏi đuôi của Let's là shall we?"},
+    {q: "She ________ have bought the tickets today, but I can't be sure.", o: ["must", "might", "can't", "shouldn't"], a: 1, e: "Might have PII: Có thể đã (chưa chắc chắn)."},
+    {q: "Could you tell us ________.", o: ["when you were born?", "when you were born.", "when were you born?", "when were you born."], a: 0, e: "Câu hỏi gián tiếp: Từ để hỏi + S + V (when you were born?)."},
+    {q: "I'm sleeping in Jim's room tonight, ________ ?", o: ["am not", "don't", "aren't", "isn't"], a: 2, e: "Câu hỏi đuôi của 'I am' là 'aren't I?'."},
+
+    // Advanced Transformations
+    {q: "I'm almost certain I didn't leave my wallet in the café. (can't)<br>I ________________________ my wallet in the café.", a: ["can't have left"], e: "Can't have PII: Chắc chắn đã không xảy ra trong QK."},
+    {q: "They'll find out that you've lied to them about your age. (away)<br>You won't ________________________ lying to them about your age.", a: ["get away with"], e: "Get away with: Làm sai mà không bị phạt/trót lọt."},
+    {q: "Todd lost my favourite CD, but I've forgiven him. (for)<br>I've forgiven ________________________ my favourite CD.", a: ["Todd for losing"], e: "Forgive sb FOR V-ing: Tha thứ cho ai việc gì."},
+    {q: "The woman said that my uncle was a thief! (accused)<br>The woman ________________________ a thief!", a: ["accused my uncle of being"], e: "Accuse sb OF V-ing: Buộc tội ai làm gì."},
+    {q: "I can't understand why Jake would have said that. (work)<br>I can't ________________________ why Jake would have said that.", a: ["work out"], e: "Work out: Tìm ra lời giải / hiểu ra."},
+    {q: "You can always trust Souli. (rely)<br>You can always ________________________ Souli.", a: ["rely on"], e: "Rely on = Trust (Tin tưởng/dựa dẫm vào)."},
+
+    // Advanced Conjunctions & Passives
+    {q: "I'll buy a ticket as soon as I ________ my pocket money.", o: ["will get", "would get", "get", "got"], a: 2, e: "Mệnh đề thời gian tương lai dùng thì HTĐ (as soon as I get)."},
+    {q: "The food was great, ________ it was very expensive.", o: ["although", "despite", "however", "in spite"], a: 0, e: "Although + S + V: Mặc dù."},
+    {q: "I'll get my dad a book for his birthday ________ I find something better.", o: ["if", "until", "although", "unless"], a: 3, e: "Unless = Trừ khi (Tôi sẽ mua sách trừ khi tìm được món khác tốt hơn)."},
+    {q: "I'll send you a text message ________ I'm on the bus.", o: ["before", "while", "until", "as soon"], a: 1, e: "While + S + V: Trong khi đang..."},
+    {q: "We're going to have ________ down.", o: ["knocked that wall", "that wall knocking", "knocking that wall", "that wall knocked"], a: 3, e: "Have sth PII: Nhờ/thuê người khác làm gì (Have that wall knocked down)."},
+    {q: "We decided to go for a walk ________ of the rain.", o: ["although", "despite", "however", "in spite"], a: 3, e: "In spite of + N: Mặc dù."},
+    {q: "I ________ the windows cleaned about twice a year.", o: ["get", "put", "am", "do"], a: 0, e: "Get sth PII = Have sth PII (Nhờ/thuê vệ sinh cửa)."},
+    {q: "Most students did very well. ________ a few students did very badly.", o: ["Although", "Despite", "However", "In spite of"], a: 2, e: "However đứng đầu câu, ngăn cách bởi dấu phẩy (Tuy nhiên)."}
+];
+
+let pool = [];
+let currentIndex = 0;
+let answered = false;
+
+function init() {
+    // Random 40 questions
+    const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+    pool = shuffled.slice(0, 40);
+    renderQuestion();
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && answered) {
+            nextQuestion();
+        } else if (e.key === 'Enter' && !answered) {
+            const inputField = document.getElementById('fill-blank');
+            if (inputField && document.activeElement === inputField) {
+                checkAnswer(inputField.value.trim());
+            }
+        }
+    });
+}
+
+function renderQuestion() {
+    if(currentIndex >= pool.length) {
+        document.getElementById('app').innerHTML = `<h2 style="color:var(--primary);">🎉 Hoàn thành bài tập!</h2><p>Bạn đã trả lời xong 40 câu hỏi.</p><button class="btn" onclick="location.reload()">Làm lại</button>`;
+        return;
+    }
+    
+    answered = false;
+    const currentQuestion = pool[currentIndex];
+    
+    document.getElementById('progress').innerText = `Câu hỏi ${currentIndex + 1} / 40`;
+    document.getElementById('explanation').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    
+    const container = document.getElementById('question-container');
+    container.innerHTML = `<div class="question-text">${currentQuestion.q}</div>`;
+    
+    if(currentQuestion.o) {
+        // MCQ
+        const optsDiv = document.createElement('div');
+        optsDiv.className = 'options';
+        currentQuestion.o.forEach((optText, idx) => {
+            const label = document.createElement('label');
+            label.className = 'option-label';
+            label.id = 'lbl-' + idx;
+            label.innerHTML = `<input type="radio" name="answer" value="${idx}"> ${optText}`;
+            label.onclick = () => { if(!answered) checkAnswer(idx); };
+            optsDiv.appendChild(label);
+        });
+        container.appendChild(optsDiv);
+    } else {
+        // Fill in the blank
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'fill-blank';
+        input.placeholder = 'Nhập câu trả lời của bạn...';
+        input.autocomplete = 'off';
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.innerText = 'Kiểm tra';
+        btn.onclick = () => { if(!answered) checkAnswer(input.value.trim()); };
+        
+        container.appendChild(input);
+        container.appendChild(btn);
+        
+        // Auto focus
+        setTimeout(() => input.focus(), 100);
+    }
+}
+
+function checkAnswer(userAns) {
+    if(answered) return;
+    const currentQuestion = pool[currentIndex];
+    
+    // For text input, block empty
+    if (!currentQuestion.o && userAns === "") return;
+    
+    answered = true;
+    let isCorrect = false;
+    let correctText = "";
+    
+    if(currentQuestion.o) {
+        isCorrect = (userAns === currentQuestion.a);
+        correctText = currentQuestion.o[currentQuestion.a];
+    } else {
+        const userStr = String(userAns).toLowerCase().trim();
+        if (Array.isArray(currentQuestion.a)) {
+            isCorrect = currentQuestion.a.some(valid => valid.toLowerCase() === userStr);
+            correctText = currentQuestion.a.join(" hoặc ");
+        } else {
+            isCorrect = (userStr === currentQuestion.a.toLowerCase());
+            correctText = currentQuestion.a;
+        }
+    }
+    
+    // Show Explanation
+    const expDiv = document.getElementById('explanation');
+    expDiv.style.display = 'block';
+    expDiv.className = isCorrect ? 'exp-correct' : 'exp-wrong';
+    
+    expDiv.innerHTML = `<strong>${isCorrect ? '✅ Chính xác!' : '❌ Sai rồi!'}</strong><br>
+    ${!isCorrect ? `<strong>Đáp án đúng:</strong> ${correctText}<br>` : ''}
+    <div style="margin-top:8px;"><strong>Giải thích:</strong> ${currentQuestion.e}</div>`;
+    
+    // UI Updates
+    if(currentQuestion.o) {
+        document.getElementById('lbl-' + currentQuestion.a).classList.add('correct-element');
+        if(!isCorrect) {
+            document.getElementById('lbl-' + userAns).classList.add('wrong-element');
+        }
+        // Disable all radios
+        document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    } else {
+        const inp = document.getElementById('fill-blank');
+        inp.classList.add(isCorrect ? 'correct-element' : 'wrong-element');
+        inp.disabled = true;
+    }
+    
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.style.display = 'block';
+    nextBtn.onclick = nextQuestion;
+}
+
+function nextQuestion() {
+    currentIndex++;
+    renderQuestion();
+}
+
+// Start
+window.onload = init;
+</script>
+
+</body>
+</html>
