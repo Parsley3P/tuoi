@@ -210,3 +210,108 @@ body {
 .set-5 .cork-pin.br { bottom: 5px; right: 5px; }
 .set-5 .torn-paper { width: 220px; background: #fff; padding: 20px; border: 1px solid #ccc; border-top: 15px solid #333; border-top-left-radius: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 0.9em; position: relative; }
 .set-5 .torn-edge { position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; background: linear-gradient(-45deg, transparent 5px, #fff 0), linear-gradient(45deg, transparent 5px, #fff 0); background-position: left bottom; background-repeat: repeat-x; background-size: 10px 10px; border-bottom: 1px solid #ccc; }
+
+/* =========================================
+   NEW SINGLE-QUESTION UI STYLES
+   ========================================= */
+#quiz-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    width: 100%;
+}
+
+/* UPDATED: Added .question-container and .question-row */
+#quiz-app .question-block,
+#quiz-app .question-container,
+#quiz-app .question-row {
+    background: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+    margin-bottom: 0;
+    border-bottom: none;
+    align-items: center;
+}
+
+/* Make it responsive for mobile */
+@media (max-width: 768px) {
+    /* UPDATED: Added .question-container and .question-row here too */
+    #quiz-app .question-block,
+    #quiz-app .question-container,
+    #quiz-app .question-row {
+        flex-direction: column;
+        padding: 20px;
+    }
+    #quiz-app .stimulus-col, 
+    #quiz-app .source-material, 
+    #quiz-app .visual-pane {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+.explanation-box {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background-color: #e8f5e9;
+    border-left: 5px solid #4caf50;
+    border-radius: 4px;
+    color: #2e7d32;
+    font-size: 15px;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.next-btn {
+    margin-top: 25px;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #1976d2;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+}
+
+.next-btn:hover { background-color: #1565c0; }
+
+.quiz-progress {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Normalize radio button inputs */
+.rc-radio-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+.rc-radio-container:hover { background: #f0f0f0; }
+.rc-radio-container input { margin-right: 15px; transform: scale(1.2); cursor: pointer; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
